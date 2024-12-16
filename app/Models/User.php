@@ -6,11 +6,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -21,7 +22,42 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'scheme',
     ];
+
+
+    public function contacts()
+    {
+        return $this->hasMany(Contact::class);
+    }
+
+    public function events()
+    {
+        return $this->hasMany(Event::class);
+    }
+
+    public function eventMemberships()
+    {
+        return $this->morphMany(EventMember::class, 'member');
+    }
+
+    public function expensesAsPayer()
+    {
+        return $this->morphMany(Expense::class, 'payer');
+    }
+    public function expensesAsTo()
+    {
+        return $this->morphMany(Expense::class, 'to');
+    }
+    public function expensesAsFrom()
+    {
+        return $this->morphMany(Expense::class, 'from');
+    }
+
+    public function expensesPaidFor()
+    {
+        return $this->morphToMany(Expense::class, 'member', 'expense_members');
+    }
 
     /**
      * The attributes that should be hidden for serialization.

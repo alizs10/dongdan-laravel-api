@@ -23,6 +23,16 @@ class EventController extends Controller
         ]);
     }
 
+    public function trashed_events(Request $request)
+    {
+        $trashed_events =  $request->user()->events()->onlyTrashed()->withCount('members')->get();
+        return response()->json([
+            'status' => true,
+            'message' => 'events retrieved successfully!',
+            'trashed_events' => $trashed_events
+        ]);
+    }
+
     public function get_event(string $slug)
     {
         $event = Event::where('slug', $slug)->first();

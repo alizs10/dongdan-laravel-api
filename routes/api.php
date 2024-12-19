@@ -7,6 +7,7 @@ use App\Http\Controllers\App\ExpenseController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\App\ProfileController;
+use App\Http\Controllers\Auth\TokenValidationController;
 
 // auth routes
 Route::prefix('auth')->group(function () {
@@ -14,6 +15,10 @@ Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login'])->name('auth.login');
     Route::post('/logout', [AuthController::class, 'logout'])->name('auth.logout')->middleware('auth:sanctum');
 });
+
+// validate token route
+Route::middleware('auth:sanctum')->get('/validate-token', TokenValidationController::class);
+
 
 // profile routes
 Route::prefix('profile')->middleware('auth:sanctum')->group(function () {
@@ -26,6 +31,7 @@ Route::controller(EventController::class)->middleware('auth:sanctum')->group(fun
 
     Route::prefix('events')->group(function () {
         Route::get('/', 'index');
+        Route::get('/trashed', 'trashed_events');
         Route::post('/', 'create');
     });
 
@@ -72,6 +78,7 @@ Route::controller(ContactController::class)->middleware('auth:sanctum')->group(f
 
     Route::prefix('contacts')->group(function () {
         Route::get('/', 'index');
+        Route::get('/trashed', 'trashed_contacts');
         Route::post('/', 'create');
     });
 

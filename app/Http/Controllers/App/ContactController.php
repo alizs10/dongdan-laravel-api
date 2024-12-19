@@ -20,6 +20,16 @@ class ContactController extends Controller
         ]);
     }
 
+    public function trashed_contacts(Request $request)
+    {
+        $trashed_contacts = $request->user()->contacts()->onlyTrashed()->get();
+        return response()->json([
+            'status' => true,
+            'message' => 'trashed contacts retrieved successfully!',
+            'trashed_contacts' => $trashed_contacts
+        ]);
+    }
+
     public function create(CreateContactRequest $request)
     {
         $contact = $request->user()->contacts()->create([

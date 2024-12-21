@@ -62,6 +62,12 @@ class ContactController extends Controller
             'scheme' => $request->scheme
         ]);
 
+        $contact->eventMemberships()->update([
+            'name' => $request->name,
+            'email' => $request->email,
+            'scheme' => $request->scheme
+        ]);
+
         return response()->json([
             'status' => true,
             'message' => 'contact updated successfully!',
@@ -83,7 +89,7 @@ class ContactController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'contact retrieved successfully!',
-            'contact' => $contact
+            'contact' => $contact->load('eventMemberships')
         ]);
     }
 

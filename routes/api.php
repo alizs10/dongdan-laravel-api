@@ -85,7 +85,11 @@ Route::controller(ContactController::class)->middleware('auth:sanctum')->group(f
     Route::prefix('contact')->group(function () {
         Route::get('/{id}', 'get_contact');
         Route::put('/{id}', 'update');
-        Route::delete('/{id}', 'delete');
-        Route::delete('/{id}/delete', 'destroy');
+        Route::put('/restore/{id}', 'restore');
+        Route::put('/restore/items', 'restore_items');
+        Route::delete('/{id}', 'trash');
+        Route::delete('/{id}/delete', 'delete');
+        Route::delete('/trash/items', 'trash_items');
+        Route::delete('/delete/items', 'destroy_items');
     });
 });

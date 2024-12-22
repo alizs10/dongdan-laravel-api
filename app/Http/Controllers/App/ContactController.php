@@ -4,6 +4,7 @@ namespace App\Http\Controllers\App;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreateContactRequest;
+use App\Http\Requests\MultiContactRequest;
 use App\Http\Requests\UpdateContactRequest;
 use Illuminate\Http\Request;
 
@@ -93,7 +94,7 @@ class ContactController extends Controller
         ]);
     }
 
-    public function delete(Request $request, $id)
+    public function trash(Request $request, $id)
     {
         $contact = $request->user()->contacts()->find($id);
         if (!$contact) {
@@ -110,7 +111,7 @@ class ContactController extends Controller
         ]);
     }
 
-    public function destroy(Request $request, string $id)
+    public function delete(Request $request, string $id)
     {
         $contact = $request->user()->contacts()->withTrashed()->find($id);
 
@@ -127,5 +128,52 @@ class ContactController extends Controller
             'status' => true,
             'message' => 'contact permanently deleted successfully!'
         ]);
+    }
+
+    public function trash_items(MultiContactRequest $request)
+    {
+        $request->user()->contacts()->whereIn('id', $request->contacts)->delete();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'contacts moved to trash successfully!'
+        ], 200);
+    }
+
+    public function delete_items(MultiContactRequest $request)
+    {
+        $request->user()->contacts()->withTrashed()->whereIn('id', $request->contacts)->forceDelete();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'contacts permanently deleted successfully!'
+        ], 200);
+    }
+
+    public function restore(Request $request, string $id)
+    {
+        $contact = $request->user()->contacts()->withTrashed()->find($id);
+        if (!$contact) {
+            return response()->json([
+                'status' => false,
+                'message' => 'contact not found!',
+            ]);
+        }
+        $contact->restore();
+        return response()->json([
+            'status' => true,
+            'message' => 'contact restored successfully!'
+        ], 200);
+    }
+
+    public function restore_items(MultiContactRequest $request)
+    {
+
+        $request->user()->contacts()->withTrashed()->whereIn('id', $request->contacts)->restore();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'contacts restored successfully!'
+        ], 200);
     }
 }

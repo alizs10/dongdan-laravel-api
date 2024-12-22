@@ -21,7 +21,7 @@ class ContactBelongsToUser implements ValidationRule
      */
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
-        if (!$this->user->contacts()->where('contacts.id', $value)->exists()) {
+        if (!$this->user->contacts()->withTrashed()->where('contacts.id', $value)->exists()) {
             $fail('The selected contact does not belong to this user.');
         }
     }

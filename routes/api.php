@@ -33,13 +33,18 @@ Route::controller(EventController::class)->middleware('auth:sanctum')->group(fun
         Route::get('/', 'index');
         Route::get('/trashed', 'trashed_events');
         Route::post('/', 'create');
+
+        Route::put('/restore/items', 'restore_items');
+        Route::delete('/trash/items', 'trash_items');
+        Route::delete('/delete/items', 'delete_items');
     });
 
     Route::prefix('event')->group(function () {
         Route::get('/{event:slug}', 'get_event');
         Route::put('/{id}', 'update');
-        Route::delete('/{id}', 'delete');
-        Route::delete('/{id}/delete', 'destroy');
+        Route::put('/{id}/restore', 'restore');
+        Route::delete('/{id}', 'trash');
+        Route::delete('/{id}/delete', 'delete');
     });
 });
 
@@ -81,8 +86,8 @@ Route::controller(ContactController::class)->middleware('auth:sanctum')->group(f
         Route::get('/trashed', 'trashed_contacts');
         Route::post('/', 'create');
 
-        Route::delete('/trash/items', 'trash_items');
         Route::put('/restore/items', 'restore_items');
+        Route::delete('/trash/items', 'trash_items');
         Route::delete('/delete/items', 'delete_items');
     });
 

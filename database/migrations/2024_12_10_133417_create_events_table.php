@@ -17,8 +17,8 @@ return new class extends Migration
             $table->string('name');
             $table->string('slug');
             $table->string('label');
-            $table->date('start_date');
-            $table->date('end_date')->nullable();
+            $table->timestamp('start_date');
+            $table->timestamp('end_date')->nullable();
             $table->timestamps();
             $table->softDeletes();
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');

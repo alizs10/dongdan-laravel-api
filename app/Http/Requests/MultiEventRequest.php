@@ -2,9 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\EventBelongsToUser;
 use Illuminate\Foundation\Http\FormRequest;
 
-class CreateEventRequest extends FormRequest
+class MultiEventRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,12 +23,8 @@ class CreateEventRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string|max:255',
-            'start_date' => 'required|date',
-            'label' => 'required|string|max:255',
-            'self_included' => 'required|string|in:true,false',
-            'contact_members' => 'nullable|array',
-            'contact_members.*' => 'required|exists:contacts,id',
+            'events' => 'required|array',
+            'events.*' => ['required', 'string', 'exists:events,id', new EventBelongsToUser($this->user())]
         ];
     }
 }

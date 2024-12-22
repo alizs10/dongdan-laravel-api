@@ -4,11 +4,13 @@ namespace App\Http\Controllers\App;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreateEventRequest;
+use App\Http\Requests\MultiEventRequest;
 use App\Http\Requests\UpdateEventRequest;
 use App\Models\Contact;
 use App\Models\Event;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 class EventController extends Controller
 {
@@ -55,8 +57,7 @@ class EventController extends Controller
     {
         $event = Event::create([
             'name' => $request->name,
-            'start_date' => $request->start_date,
-            'end_date' => $request->end_date,
+            'start_date' => Carbon::parse($request->start_date)->setTimezone('Asia/Tehran')->format('Y-m-d H:i:s'),
             'label' => $request->label,
             'user_id' => $request->user()->id
         ]);
@@ -155,7 +156,8 @@ class EventController extends Controller
         ]);
     }
 
-    public function delete(Request $request, string $id)
+    // trash event/events
+    public function trash(Request $request, string $id)
     {
 
         $event = Event::find($id);
@@ -182,7 +184,47 @@ class EventController extends Controller
         ]);
     }
 
-    public function destroy(Request $request, string $id)
+    public function trash_items(MultiEventRequest $request)
+    {
+        $request->user()->events()->whereIn('id', $request->events)->delete();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'events moved to trash successfully!'
+        ], 200);
+    }
+
+    // restore event/events
+    public function restore(Request $request, string $id)
+    {
+        $event = $request->user()->events()->withTrashed()->find($id);
+        if (!$event) {
+            return response()->json([
+                'status' => false,
+                'message' => 'event not found!',
+            ]);
+        }
+        $event->restore();
+        return response()->json([
+            'status' => true,
+            'message' => 'event restored successfully!'
+        ], 200);
+    }
+
+    public function restore_items(MultiEventRequest $request)
+    {
+
+        $request->user()->events()->withTrashed()->whereIn('id', $request->events)->restore();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'events restored successfully!'
+        ], 200);
+    }
+
+
+    // delete event/events
+    public function delete(Request $request, string $id)
     {
         $event = Event::withTrashed()->find($id);
 
@@ -206,5 +248,15 @@ class EventController extends Controller
             'status' => true,
             'message' => 'event deleted successfully!'
         ]);
+    }
+
+    public function delete_items(MultiEventRequest $request)
+    {
+        $request->user()->events()->withTrashed()->whereIn('id', $request->events)->forceDelete();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'events permanently deleted successfully!'
+        ], 200);
     }
 }

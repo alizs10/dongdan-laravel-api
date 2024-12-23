@@ -3,6 +3,8 @@
 namespace App\Http\Requests;
 
 use App\Models\Event;
+use App\Rules\ContactBelongsToUser;
+use App\Rules\MemberBelongsToEvent;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateEventRequest extends FormRequest
@@ -28,8 +30,11 @@ class UpdateEventRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'start_date' => 'required|date',
-            'end_date' => 'nullable|date|after:start_date',
-            'label' => 'required|string|max:255'
+            'label' => 'required|string|max:255',
+            'members' => 'nullable|array',
+            'members.*' => ['required', 'string', 'exists:event_members,id', new MemberBelongsToEvent($this->route('id'))],
+            'contacts' => 'nullable|array',
+            'contacts.*' => ['required', 'string', 'exists:contacts,id', new ContactBelongsToUser($this->user())],
         ];
     }
 }

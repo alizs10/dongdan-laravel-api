@@ -106,53 +106,32 @@ class EventController extends Controller
 
         $event->update([
             'name' => $request->name,
-            'start_date' => $request->start_date,
-            'end_date' => $request->end_date,
+            'start_date' => Carbon::parse($request->start_date)->setTimezone('Asia/Tehran')->format('Y-m-d H:i:s'),
             'label' => $request->label,
         ]);
 
-        // add new contact members
-        // if ($request->add_contact_members && count($request->add_contact_members) > 0) {
-        //     foreach ($request->add_contact_members as $member_id) {
-        //         $contact = Contact::find($member_id);
-        //         $event->members()->create([
-        //             'member_id' => $contact->id,
-        //             'member_type' => Contact::class,
-        //             'name' => $contact->name,
-        //             'scheme' => $contact->scheme,
-        //             'email' => $contact->email,
-        //         ]);
-        //     }
-        // }
-
-        // remove contact members
-        // if ($request->remove_contact_members && count($request->remove_contact_members) > 0) {
-        //     foreach ($request->remove_contact_members as $member_id) {
-        //         $event->members()->where('member_id', $member_id)->delete();
-        //     }
-        // }
+        // sync contacts: we are getting event members ids, every member except these ids should be deleted.
+        $event->members()->whereNotIn('id', $request->members)->delete();
 
 
-        // update self included
-        // if ($request->self_included) {
-        //     if ($request->self_included === 'true') {
-        //         $event->members()->firstOrCreate([
-        //             'member_id' => $request->user()->id,
-        //             'member_type' => User::class,
-        //             'name' => $request->user()->name,
-        //             'scheme' => $request->user()->scheme,
-        //             'email' => $request->user()->email,
-        //         ]);
-        //     } else {
-        //         $event->members()->where('member_id', $request->user()->id)->delete();
-        //     }
-        // }
+        // add contacts as members: we are getting contact ids, make sure they are not already members. then create new members.
+        $contacts = Contact::findMany($request->contacts);
 
+        foreach ($contacts as $contact) {
+            $event->members()->firstOrCreate([
+                'member_id' => $contact->id,
+                'member_type' => Contact::class,
+            ], [
+                'name' => $contact->name,
+                'scheme' => $contact->scheme,
+                'email' => $contact->email,
+            ]);
+        }
 
         return response()->json([
             'status' => true,
             'message' => 'event updated successfully!',
-            'event' => $event->load(['members', 'expenses'])
+            'event' => $event->load(['members', 'expenses'])->loadCount('members')
         ]);
     }
 

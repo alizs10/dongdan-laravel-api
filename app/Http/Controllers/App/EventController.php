@@ -135,6 +135,29 @@ class EventController extends Controller
         ]);
     }
 
+    public function updateStatus(Request $request, string $id)
+    {
+        $event = $request->user()->events()->find($id);
+        if (!$event) {
+            return response()->json([
+                'status' => false,
+                'message' => 'event not found!'
+            ]);
+        }
+
+        $event->update([
+            'end_date' => $event->end_date === null ? Carbon::now()->setTimezone('Asia/Tehran')->format('Y-m-d H:i:s') : null,
+        ]);
+
+        $event->refresh();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'event status updated successfully!',
+            'end_date' => $event->end_date,
+        ]);
+    }
+
     // trash event/events
     public function trash(Request $request, string $id)
     {

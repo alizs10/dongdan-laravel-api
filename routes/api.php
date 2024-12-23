@@ -42,6 +42,7 @@ Route::controller(EventController::class)->middleware('auth:sanctum')->group(fun
     Route::prefix('event')->group(function () {
         Route::get('/{event:slug}', 'get_event');
         Route::put('/{id}', 'update');
+        Route::put('/{id}/status', 'updateStatus');
         Route::put('/{id}/restore', 'restore');
         Route::delete('/{id}', 'trash');
         Route::delete('/{id}/delete', 'delete');

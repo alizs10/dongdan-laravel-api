@@ -28,6 +28,32 @@ class EventMemberController extends Controller
         ]);
     }
 
+    public function get_non_members(Request $request, $event_id)
+    {
+        $event = $request->user()->events()->find($event_id);
+        if (!$event) {
+            return response()->json([
+                'message' => 'Event not found',
+                'status' => false
+            ], 404);
+        }
+        $non_members = [];
+        $user_contacts = $request->user()->contacts()->get();
+        $members = $event->members()->get();
+
+        foreach ($user_contacts as $contact) {
+            if (!$members->contains('member_id', $contact->id)) {
+                $non_members[] = $contact;
+            }
+        }
+
+        return response()->json([
+            'non_members' => $non_members,
+            'message' => 'Non members retrieved successfully',
+            'status' => true
+        ]);
+    }
+
     public function create_member(CreateEventMemberRequest $request, $event_id)
     {
         $event = $request->user()->events()->find($event_id);

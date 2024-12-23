@@ -71,6 +71,9 @@ Route::controller(EventMemberController::class)->middleware(['auth:sanctum', 'ch
         Route::post('/', 'create_member');
     });
 
+    Route::get('/event/{event_id}/non-members', 'get_non_members');
+
+
     Route::prefix('event/{event_id}/member/{member_id}')->group(function () {
         Route::get('/', 'get_member');
         Route::put('/', 'update_member');

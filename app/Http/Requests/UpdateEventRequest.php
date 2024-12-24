@@ -31,6 +31,7 @@ class UpdateEventRequest extends FormRequest
             'name' => 'required|string|max:255',
             'start_date' => 'required|date',
             'label' => 'required|string|max:255',
+            'self_included' => 'required|string|in:true,false',
             'members' => 'nullable|array',
             'members.*' => ['required', 'string', 'exists:event_members,id', new MemberBelongsToEvent($this->route('id'))],
             'contacts' => 'nullable|array',

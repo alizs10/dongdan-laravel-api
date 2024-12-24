@@ -128,6 +128,20 @@ class EventController extends Controller
             ]);
         }
 
+        // add/delete user as member
+        if ($request->self_included === 'true') {
+            $event->members()->firstOrCreate([
+                'member_id' => $request->user()->id,
+                'member_type' => User::class,
+            ], [
+                'name' => $request->user()->name,
+                'scheme' => $request->user()->scheme,
+                'email' => $request->user()->email,
+            ]);
+        } else {
+            $event->members()->where('member_id', $request->user()->id)->delete();
+        }
+
         return response()->json([
             'status' => true,
             'message' => 'event updated successfully!',

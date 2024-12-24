@@ -5,6 +5,8 @@ namespace App\Http\Controllers\App;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreateEventMemberRequest;
 use App\Http\Requests\UpdateEventMemberRequest;
+use App\Models\Contact;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class EventMemberController extends Controller
@@ -47,8 +49,15 @@ class EventMemberController extends Controller
             }
         }
 
+        $self_included = true;
+        // check for user it self
+        if (!$members->contains('member_id', $request->user()->id)) {
+            $self_included = false;
+        }
+
         return response()->json([
             'non_members' => $non_members,
+            'self_included' => $self_included,
             'message' => 'Non members retrieved successfully',
             'status' => true
         ]);
@@ -64,71 +73,46 @@ class EventMemberController extends Controller
             ], 404);
         }
 
-        if ($request->member_id && $request->member_type && $request->member_type == 'App\Models\Contact') {
+        if ($request->contacts || $request->self_included) {
+            $contacts = Contact::findMany($request->contacts);
 
-            $contact = $request->user()->contacts()->find($request->member_id);
-            if (!$contact) {
-                return response()->json([
-                    'message' => 'Contact not found',
-                    'status' => false
-                ], 404);
+            $contacts->each(function ($contact) use ($event) {
+                $event->members()->firstOrCreate([
+                    'member_id' => $contact->id,
+                    'member_type' => Contact::class,
+                    'name' => $contact->name,
+                    'email' => $contact->email,
+                    'scheme' => $contact->scheme
+                ]);
+            });
+
+            if ($request->self_included === 'true') {
+                $event->members()->firstOrCreate([
+                    'member_id' => $request->user()->id,
+                    'member_type' => User::class,
+                    'name' => $request->user()->name,
+                    'email' => $request->user()->email,
+                    'scheme' => $request->user()->scheme
+                ]);
+            } else {
+                $event->members()->where('member_id', $request->user()->id)->delete();
             }
 
-            $already_member = $event->members()->where('member_id', $contact->id)->first();
-
-            if ($already_member) {
-                return response()->json([
-                    'message' => 'Member already exists',
-                    'status' => false
-                ], 400);
-            }
-
-            $member = $event->members()->create([
-                'name' => $contact->name,
-                'email' => $contact->email,
-                'scheme' => $contact->scheme,
-                'member_id' => $request->member_id,
-                'member_type' => 'App\Models\Contact'
-            ]);
+            return response()->json([
+                'message' => 'Members created successfully',
+                'members' => $event->members()->get(),
+                'status' => true
+            ], 200);
         }
 
-        if ($request->member_id && $request->member_type && $request->member_type == 'App\Models\User') {
-
-            if ($request->member_id != $request->user()->id) {
-                return response()->json([
-                    'message' => 'You can only add yourself as a member',
-                    'status' => false
-                ], 422);
-            }
-
-            $already_member = $event->members()->where('member_id', $request->user()->id)->first();
-
-            if ($already_member) {
-                return response()->json([
-                    'message' => 'Member already exists',
-                    'status' => false
-                ], 400);
-            }
-
-            $member = $event->members()->create([
-                'name' => $request->user()->name,
-                'email' => $request->user()->email,
-                'scheme' => $request->user()->scheme,
-                'member_id' => $request->user()->id,
-                'member_type' => 'App\Models\User'
-            ]);
-        }
-
-        if (!$request->member_id && !$request->member_type) {
-            $member = $event->members()->create([
-                'name' => $request->name,
-                'email' => $request->email,
-                'scheme' => $request->scheme,
-            ]);
-        }
+        $new_member = $event->members()->firstOrCreate([
+            'name' => $request->name,
+            'email' => $request->email,
+            'scheme' => $request->scheme
+        ]);
 
         return response()->json([
-            'member' => $member->load('member'),
+            'member' => $new_member,
             'message' => 'Member created successfully',
             'status' => true
         ], 201);

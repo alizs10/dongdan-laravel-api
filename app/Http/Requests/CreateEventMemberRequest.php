@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\ContactBelongsToUser;
 use Illuminate\Foundation\Http\FormRequest;
 
 class CreateEventMemberRequest extends FormRequest
@@ -22,21 +23,15 @@ class CreateEventMemberRequest extends FormRequest
     public function rules(): array
     {
 
-        if ($this->member_id && $this->member_type && $this->member_type == 'App\Models\Contact') {
+        if ($this->contacts || $this->self_included) {
 
             return [
-                'member_id' => 'required|string|exists:contacts,id',
-                'member_type' => 'required|string|in:App\Models\Contact',
+                'contacts' => 'nullable|array',
+                'contacts.*' => ['required', 'string', 'exists:contacts,id', new ContactBelongsToUser($this->user())],
+                'self_included' => 'required|in:true,false',
             ];
         }
 
-        if ($this->member_id && $this->member_type && $this->member_type == 'App\Models\User') {
-
-            return [
-                'member_id' => 'required|string|in:' . $this->user()->id,
-                'member_type' => 'required|string|in:App\Models\User',
-            ];
-        }
 
         return [
             'name' => 'required|string|max:255',

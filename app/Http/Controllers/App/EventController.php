@@ -49,7 +49,7 @@ class EventController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'event retrieved successfully!',
-            'event' => $event->load(['members', 'expenses'])
+            'event' => $event->load(['members', 'expenses', 'expenses.contributors'])
         ]);
     }
 

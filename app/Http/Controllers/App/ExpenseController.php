@@ -44,7 +44,7 @@ class ExpenseController extends Controller
         $expense = $event->expenses()->create([
             'type' => $request->type,
             'description' => $request->description,
-            'date' => Carbon::parse($request->start_date)->setTimezone('Asia/Tehran')->format('Y-m-d H:i:s'),
+            'date' => Carbon::parse($request->date)->setTimezone('Asia/Tehran')->format('Y-m-d H:i:s'),
             'payer_id' => $request->payer_id,
             'transmitter_id' => $request->transmitter_id,
             'receiver_id' => $request->receiver_id,
@@ -56,7 +56,7 @@ class ExpenseController extends Controller
         }
 
         return response()->json([
-            'expense' => $expense,
+            'expense' => $expense->load('contributors'),
             'message' => 'Expense created successfully',
             'status' => true
         ], 201);

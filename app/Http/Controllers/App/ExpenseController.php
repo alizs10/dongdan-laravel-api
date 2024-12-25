@@ -4,6 +4,7 @@ namespace App\Http\Controllers\App;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreateExpenseRequest;
+use App\Http\Requests\MultiExpensesRequest;
 use App\Http\Requests\UpdateExpenseRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -156,5 +157,23 @@ class ExpenseController extends Controller
             'message' => 'Expense deleted successfully',
             'status' => true
         ]);
+    }
+
+    public function delete_items(MultiExpensesRequest $request, $event_id)
+    {
+        $event = $request->user()->events()->find($event_id);
+        if (!$event) {
+            return response()->json([
+                'message' => 'Event not found',
+                'status' => false
+            ], 404);
+        }
+
+        $event->expenses()->whereIn('id', $request->expenses)->forceDelete();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'expenses permanently deleted successfully!'
+        ], 200);
     }
 }

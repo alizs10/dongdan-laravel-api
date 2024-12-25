@@ -55,6 +55,7 @@ Route::controller(ExpenseController::class)->middleware(['auth:sanctum', 'check.
     Route::prefix('event/{event_id}/expenses')->group(function () {
         Route::get('/', 'get_expenses');
         Route::post('/', 'create_expense');
+        Route::delete('/delete/items', 'delete_items');
     });
 
     Route::prefix('event/{event_id}/expense/{expense_id}')->group(function () {

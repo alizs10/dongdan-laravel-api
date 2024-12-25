@@ -5,13 +5,13 @@ namespace App\Rules;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 
-class EventBelongsToUser implements ValidationRule
+class ExpenseBelongsToEvent implements ValidationRule
 {
-    protected $user;
+    protected $event;
 
-    public function __construct($user)
+    public function __construct($event)
     {
-        $this->user = $user;
+        $this->event = $event;
     }
 
     /**
@@ -21,8 +21,8 @@ class EventBelongsToUser implements ValidationRule
      */
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
-        if (!$this->user->events()->withTrashed()->where('events.id', $value)->exists()) {
-            $fail('The selected event does not belong to this user.');
+        if (!$this->event->expenses()->where('expenses.id', $value)->exists()) {
+            $fail('The selected expense does not belong to this event.');
         }
     }
 }

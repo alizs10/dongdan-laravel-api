@@ -110,10 +110,9 @@ class ExpenseController extends Controller
         }
 
         $expense->update([
-            // 'name' => $request->name,
             'type' => $request->type,
             'description' => $request->description,
-            'date' => $request->date,
+            'date' => Carbon::parse($request->date)->setTimezone('Asia/Tehran')->format('Y-m-d H:i:s'),
             'payer_id' => $request->payer_id,
             'transmitter_id' => $request->transmitter_id,
             'receiver_id' => $request->receiver_id,
@@ -122,11 +121,13 @@ class ExpenseController extends Controller
 
         $expense->contributors()->sync($request->contributors);
 
+        $expense->refresh();
+
         return response()->json([
             'expense' => $expense->load(['payer', 'transmitter', 'receiver', 'contributors']),
             'message' => 'Expense updated successfully',
             'status' => true
-        ]);
+        ], 200);
     }
 
     public function destroy_expense(Request $request, $event_id, $expense_id)

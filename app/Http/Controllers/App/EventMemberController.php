@@ -193,6 +193,7 @@ class EventMemberController extends Controller
                 'status' => false
             ], 404);
         }
+
         $member = $event->members()->find($member_id);
         if (!$member) {
             return response()->json([

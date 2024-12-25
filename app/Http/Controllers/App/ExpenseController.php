@@ -48,7 +48,7 @@ class ExpenseController extends Controller
             'payer_id' => $request->payer_id,
             'transmitter_id' => $request->transmitter_id,
             'receiver_id' => $request->receiver_id,
-            'amount' => $request->amount,
+            'amount' => intval($request->amount),
         ]);
 
         if ($request->payer_id && $request->contributors && count($request->contributors) > 0) {
@@ -116,7 +116,7 @@ class ExpenseController extends Controller
             'payer_id' => $request->payer_id,
             'transmitter_id' => $request->transmitter_id,
             'receiver_id' => $request->receiver_id,
-            'amount' => $request->amount,
+            'amount' => intval($request->amount),
         ]);
 
         $expense->contributors()->sync($request->contributors);

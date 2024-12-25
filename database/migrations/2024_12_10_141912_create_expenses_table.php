@@ -18,7 +18,7 @@ return new class extends Migration
             $table->foreignId('transmitter_id')->nullable()->constrained('event_members')->onDelete('cascade');
             $table->foreignId('receiver_id')->nullable()->constrained('event_members')->onDelete('cascade');
 
-            $table->string('name');
+            // $table->string('name');
             $table->text('description');
             $table->date('date');
             $table->bigInteger('amount');

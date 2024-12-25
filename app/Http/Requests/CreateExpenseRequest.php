@@ -23,7 +23,7 @@ class CreateExpenseRequest extends FormRequest
     public function rules(): array
     {
         $rules = [
-            'name' => ['required', 'string', 'max:255'],
+            // 'name' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string', 'max:255'],
             'type' => ['required', 'string', 'in:expend,transfer'],
             'amount' => ['required', 'string', 'regex:/^[1-9][0-9]*$/'],

@@ -41,7 +41,7 @@ class ExpenseController extends Controller
         }
 
         $expense = $event->expenses()->create([
-            'name' => $request->name,
+            // 'name' => $request->name,
             'type' => $request->type,
             'description' => $request->description,
             'date' => $request->date,
@@ -110,7 +110,7 @@ class ExpenseController extends Controller
         }
 
         $expense->update([
-            'name' => $request->name,
+            // 'name' => $request->name,
             'type' => $request->type,
             'description' => $request->description,
             'date' => $request->date,

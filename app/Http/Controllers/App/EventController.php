@@ -49,7 +49,7 @@ class EventController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'event retrieved successfully!',
-            'event' => $event->load(['members', 'expenses', 'expenses.contributors'])
+            'event' => $event->load(['members', 'expenses', 'expenses.contributors', 'expenses.payer', 'expenses.transmitter', 'expenses.receiver'])
         ]);
     }
 
@@ -91,7 +91,6 @@ class EventController extends Controller
             'event' => $event->load(['members', 'expenses'])
         ]);
     }
-
     public function update(UpdateEventRequest $request, string $id)
     {
 

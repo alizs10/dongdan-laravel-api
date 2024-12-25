@@ -57,7 +57,7 @@ class ExpenseController extends Controller
         }
 
         return response()->json([
-            'expense' => $expense->load('contributors'),
+            'expense' => $expense->load(['contributors', 'payer', 'transmitter', 'receiver']),
             'message' => 'Expense created successfully',
             'status' => true
         ], 201);

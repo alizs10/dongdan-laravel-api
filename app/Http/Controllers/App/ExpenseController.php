@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\CreateExpenseRequest;
 use App\Http\Requests\UpdateExpenseRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 class ExpenseController extends Controller
 {
@@ -41,10 +42,9 @@ class ExpenseController extends Controller
         }
 
         $expense = $event->expenses()->create([
-            // 'name' => $request->name,
             'type' => $request->type,
             'description' => $request->description,
-            'date' => $request->date,
+            'date' => Carbon::parse($request->start_date)->setTimezone('Asia/Tehran')->format('Y-m-d H:i:s'),
             'payer_id' => $request->payer_id,
             'transmitter_id' => $request->transmitter_id,
             'receiver_id' => $request->receiver_id,

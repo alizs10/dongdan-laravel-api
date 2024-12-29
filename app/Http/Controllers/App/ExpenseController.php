@@ -22,8 +22,8 @@ class ExpenseController extends Controller
             ], 404);
         }
 
-        $expenses = $event->expenses()->with(['payer', 'transmitter', 'receiver', 'contributors'])->get();
 
+        $expenses = $event->expenses()->with(['payer', 'transmitter', 'receiver', 'contributors'])->get();
         return response()->json([
             'expenses' => $expenses,
             'message' => 'Expenses retrieved successfully',

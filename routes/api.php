@@ -24,6 +24,11 @@ Route::middleware('auth:sanctum')->get('/validate-token', TokenValidationControl
 Route::prefix('profile')->middleware('auth:sanctum')->group(function () {
     Route::get('/', [ProfileController::class, 'index']);
     Route::put('/', [ProfileController::class, 'update']);
+
+    Route::prefix('settings')->group(function () {
+        Route::get('/', [ProfileController::class, 'get_settings']);
+        Route::put('/', [ProfileController::class, 'update_settings']);
+    });
 });
 
 // events routes

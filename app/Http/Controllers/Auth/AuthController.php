@@ -19,6 +19,8 @@ class AuthController extends Controller
             'scheme' => $request->scheme
         ]);
 
+        $user->settings()->create();
+
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([

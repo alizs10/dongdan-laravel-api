@@ -25,6 +25,11 @@ class User extends Authenticatable
         'scheme',
     ];
 
+    public function settings()
+    {
+        return $this->hasOne(UserSetting::class);
+    }
+
 
     public function contacts()
     {

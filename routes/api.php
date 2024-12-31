@@ -14,7 +14,10 @@ Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
     Route::get('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+    Route::get('/verify-email', [AuthController::class, 'sendVerificationEmail'])->middleware('auth:sanctum');
+    Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])->middleware(['auth:sanctum', 'signed'])->name('verification.verify');
 });
+
 
 // validate token route
 Route::middleware('auth:sanctum')->get('/validate-token', TokenValidationController::class);

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RegisterUserRequest;
 use App\Models\User;
+use App\Notifications\VerifyEmailPersian;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -13,10 +14,9 @@ class AuthController extends Controller
     public function register(RegisterUserRequest $request)
     {
         $user = User::create([
-            'name' => $request->name,
+            'name' => explode('@', $request->email)[0],
             'email' => $request->email,
             'password' => bcrypt($request->password),
-            'scheme' => $request->scheme
         ]);
 
         $user->settings()->create();
@@ -43,6 +43,10 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->firstOrFail();
         $token = $user->createToken('auth_token')->plainTextToken;
 
+        if (!$user->email_verified_at) {
+            $user->sendEmailVerificationNotification();
+        }
+
         return response()->json([
             'status' => true,
             'message' => 'Logged in successfully!',
@@ -60,4 +64,58 @@ class AuthController extends Controller
             'message' => 'Successfully logged out!'
         ], 200);
     }
+
+    public function sendVerificationEmail(Request $request)
+    {
+        $user = $request->user();
+
+        if ($user->hasVerifiedEmail()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Email already verified'
+            ], 400);
+        }
+
+        $user->sendEmailVerificationNotification();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Verification link sent to your email'
+        ], 200);
+    }
+
+    // public function verifyEmail(Request $request)
+    // {
+    //     $user = User::find($request->id);
+
+    //     if (!$user) {
+    //         return response()->json([
+    //             'status' => false,
+    //             'message' => 'User not found'
+    //         ], 404);
+    //     }
+
+    //     if (!hash_equals((string) $request->hash, sha1($user->getEmailForVerification()))) {
+    //         return response()->json([
+    //             'status' => false,
+    //             'message' => 'Invalid verification link'
+    //         ], 400);
+    //     }
+
+    //     if ($user->hasVerifiedEmail()) {
+    //         return response()->json([
+    //             'status' => false,
+    //             'message' => 'Email already verified'
+    //         ], 400);
+    //     }
+
+    //     if ($user->markEmailAsVerified()) {
+    //         event(new Verified($user));
+    //     }
+
+    //     return response()->json([
+    //         'status' => true,
+    //         'message' => 'Email verified successfully'
+    //     ], 200);
+    // }
 }

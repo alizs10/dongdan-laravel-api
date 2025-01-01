@@ -14,8 +14,13 @@ Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
     Route::get('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
-    Route::get('/verify-email', [AuthController::class, 'sendVerificationEmail'])->middleware('auth:sanctum');
-    Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail']);
+
+    // reset password
+    Route::post('/change-password', [AuthController::class, 'change_password'])->middleware('auth:sanctum');
+
+    // verify email
+    Route::get('/verify-email', [AuthController::class, 'send_verification_email'])->middleware('auth:sanctum');
+    Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verify_email']);
 });
 
 

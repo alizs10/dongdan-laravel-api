@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ChangePasswordRequest;
 use App\Http\Requests\RegisterUserRequest;
 use App\Http\Requests\VerifyEmailRequest;
 use App\Models\User;
 use App\Notifications\VerifyEmailPersian;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
@@ -66,7 +68,30 @@ class AuthController extends Controller
         ], 200);
     }
 
-    public function sendVerificationEmail(Request $request)
+
+    // handle password functions
+    public function change_password(ChangePasswordRequest $request)
+    {
+        if (!Hash::check($request->password, $request->user()->password)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'کلمه عبور فعلی اشتباه است'
+            ], 401);
+        }
+
+        $request->user()->update([
+            'password' => bcrypt($request->new_password)
+        ]);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'کلمه عبور با موفقیت تغییر کرد'
+        ], 200);
+    }
+
+
+    // verify email
+    public function send_verification_email(Request $request)
     {
         $user = $request->user();
 
@@ -85,7 +110,7 @@ class AuthController extends Controller
         ], 200);
     }
 
-    public function verifyEmail(VerifyEmailRequest $request)
+    public function verify_email(VerifyEmailRequest $request)
     {
         $user = User::findOrFail($request->id);
 

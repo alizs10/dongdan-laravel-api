@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RegisterUserRequest;
+use App\Http\Requests\VerifyEmailRequest;
 use App\Models\User;
 use App\Notifications\VerifyEmailPersian;
 use Illuminate\Http\Request;
@@ -84,38 +85,47 @@ class AuthController extends Controller
         ], 200);
     }
 
-    // public function verifyEmail(Request $request)
-    // {
-    //     $user = User::find($request->id);
+    public function verifyEmail(VerifyEmailRequest $request)
+    {
+        $user = User::findOrFail($request->id);
 
-    //     if (!$user) {
-    //         return response()->json([
-    //             'status' => false,
-    //             'message' => 'User not found'
-    //         ], 404);
-    //     }
+        $signature = hash_hmac('sha256', $request->id . $user->email . $request->expires, config('app.key'));
 
-    //     if (!hash_equals((string) $request->hash, sha1($user->getEmailForVerification()))) {
-    //         return response()->json([
-    //             'status' => false,
-    //             'message' => 'Invalid verification link'
-    //         ], 400);
-    //     }
+        if ($signature !== $request->signature) {
+            return response()->json([
+                'status' => false,
+                'message' => 'امضا نامعتبر است'
+            ], 401);
+        }
 
-    //     if ($user->hasVerifiedEmail()) {
-    //         return response()->json([
-    //             'status' => false,
-    //             'message' => 'Email already verified'
-    //         ], 400);
-    //     }
+        if (now()->timestamp > $request->expires) {
+            return response()->json([
+                'status' => false,
+                'message' => 'لینک تایید منقضی شده است'
+            ], 401);
+        }
 
-    //     if ($user->markEmailAsVerified()) {
-    //         event(new Verified($user));
-    //     }
+        if (!hash_equals((string) $request->hash, sha1($user->email))) {
+            return response()->json([
+                'status' => false,
+                'message' => 'لینک تایید نامعتبر است'
+            ], 400);
+        }
 
-    //     return response()->json([
-    //         'status' => true,
-    //         'message' => 'Email verified successfully'
-    //     ], 200);
-    // }
+        if ($user->hasVerifiedEmail()) {
+            return response()->json([
+                'status' => true,
+                'message' => 'حساب کاربری قبلا تایید شده است'
+            ], 200);
+        }
+
+        $user->markEmailAsVerified();
+
+        // event(new Verified($user));
+
+        return response()->json([
+            'status' => true,
+            'message' => 'حساب کاربری با موفقیت تایید شد'
+        ], 200);
+    }
 }

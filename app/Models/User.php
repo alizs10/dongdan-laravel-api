@@ -96,14 +96,17 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function verificationUrl()
     {
-        $params = http_build_query([
-            'id' => $this->getKey(),
-            'hash' => sha1($this->getEmailForVerification()),
-            'expires' => Carbon::now()->addMinutes(Config::get('auth.verification.expire', 60))->timestamp,
-            'signature' => hash_hmac('sha256', $this->getKey() . sha1($this->getEmailForVerification()), config('app.key'))
+        $expires = now()->addMinutes(60)->timestamp;
+        $signature = hash_hmac('sha256', $this->id . $this->email . $expires, config('app.key'));
+
+        $verificationUrl = "http://localhost:3000/auth/verify-email?" . http_build_query([
+            'id' => $this->id,
+            'hash' => sha1($this->email),
+            'signature' => $signature,
+            'expires' => $expires
         ]);
 
-        return 'http://localhost:3000/auth/verify-email?' . $params;
+        return $verificationUrl;
     }
     /**
      * Send the email verification notification.
@@ -113,5 +116,27 @@ class User extends Authenticatable implements MustVerifyEmail
     public function sendEmailVerificationNotification()
     {
         $this->notify(new VerifyEmailPersian());
+    }
+
+    /**
+     * Determine if the user has verified their email address.
+     *
+     * @return bool
+     */
+    public function hasVerifiedEmail()
+    {
+        return !is_null($this->email_verified_at);
+    }
+
+    /**
+     * Mark the given user's email as verified.
+     *
+     * @return bool
+     */
+    public function markEmailAsVerified()
+    {
+        return $this->forceFill([
+            'email_verified_at' => $this->freshTimestamp(),
+        ])->save();
     }
 }

@@ -4,13 +4,16 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ChangePasswordRequest;
+use App\Http\Requests\ForgotPasswordRequest;
 use App\Http\Requests\RegisterUserRequest;
 use App\Http\Requests\VerifyEmailRequest;
 use App\Models\User;
+use App\Notifications\ResetPasswordLinkPersian;
 use App\Notifications\VerifyEmailPersian;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
 
 class AuthController extends Controller
 {
@@ -70,6 +73,24 @@ class AuthController extends Controller
 
 
     // handle password functions
+
+    public function forgot_password(ForgotPasswordRequest $request)
+    {
+        $user = User::where('email', $request->email)->first();
+
+        // Generate reset password token
+        $token = Password::createToken($user);
+        // $status = Password::sendResetLink($request->only('email'));
+
+        $user->notify(new ResetPasswordLinkPersian($token));
+
+        return response()->json([
+            'status' => true,
+            'message' => 'لینک بازیابی رمز عبور به ایمیل شما ارسال شد'
+        ]);
+    }
+
+
     public function change_password(ChangePasswordRequest $request)
     {
         if (!Hash::check($request->password, $request->user()->password)) {

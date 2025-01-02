@@ -16,6 +16,7 @@ Route::prefix('auth')->group(function () {
     Route::get('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 
     // reset password
+    Route::post('/forgot-password', [AuthController::class, 'forgot_password']);
     Route::post('/change-password', [AuthController::class, 'change_password'])->middleware('auth:sanctum');
 
     // verify email

@@ -139,4 +139,20 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => $this->freshTimestamp(),
         ])->save();
     }
+
+    /**
+     * Get the password reset link for the user.
+     *
+     * @param string
+     * @return string
+     */
+    public function generateResetPasswordLink(string $token)
+    {
+        $resetUrl = "http://localhost:3000/auth/reset-password?" . http_build_query([
+            'token' => $token,
+            'email' => $this->email
+        ]);
+
+        return $resetUrl;
+    }
 }

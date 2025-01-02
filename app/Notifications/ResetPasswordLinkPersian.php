@@ -7,16 +7,20 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class VerifyEmailPersian extends Notification
+class ResetPasswordLinkPersian extends Notification
 {
     // use Queueable;
+
+    public $token;
+
 
     /**
      * Create a new notification instance.
      */
-    public function __construct()
+
+    public function __construct($token)
     {
-        //
+        $this->token = $token;
     }
 
     /**
@@ -35,12 +39,12 @@ class VerifyEmailPersian extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('no-replay: ' . 'تایید ایمیل')
+            ->subject('no-replay: ' . 'بازیابی رمز عبور')
             ->view(
-                'emails.verify-email',
+                'emails.reset-password-link',
                 [
                     'name' => $notifiable->name,
-                    'verificationUrl' => $notifiable->verificationUrl(),
+                    'url' => $notifiable->generateResetPasswordLink($this->token),
                 ]
             );
     }

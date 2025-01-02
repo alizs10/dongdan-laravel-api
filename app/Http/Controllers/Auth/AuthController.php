@@ -9,6 +9,7 @@ use App\Http\Requests\RegisterUserRequest;
 use App\Http\Requests\ResetPasswordRequest;
 use App\Http\Requests\VerifyEmailRequest;
 use App\Models\User;
+use App\Notifications\PasswordChangedPersian;
 use App\Notifications\ResetPasswordLinkPersian;
 use App\Notifications\VerifyEmailPersian;
 use Illuminate\Http\Request;
@@ -115,6 +116,11 @@ class AuthController extends Controller
                 // event(new PasswordReset($user));
             }
         );
+
+        if ($status === Password::PASSWORD_RESET) {
+            $user->notify(new PasswordChangedPersian());
+        }
+
         return $status === Password::PASSWORD_RESET ? response()->json([
             'status' => true,
             'message' => 'رمز عبور با موفقیت تغییر کرد'

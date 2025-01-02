@@ -7,7 +7,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class VerifyEmailPersian extends Notification
+class PasswordChangedPersian extends Notification
 {
     use Queueable;
 
@@ -35,12 +35,11 @@ class VerifyEmailPersian extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('no-replay: ' . 'تایید ایمیل')
+            ->subject('no-replay: ' . 'تغییر رمز عبور')
             ->view(
-                'emails.verify-email',
+                'emails.password-changed',
                 [
-                    'name' => $notifiable->name,
-                    'verificationUrl' => $notifiable->verificationUrl(),
+                    'name' => $notifiable->name
                 ]
             );
     }

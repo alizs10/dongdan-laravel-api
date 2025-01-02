@@ -9,7 +9,7 @@ use Illuminate\Notifications\Notification;
 
 class ResetPasswordLinkPersian extends Notification
 {
-    // use Queueable;
+    use Queueable;
 
     public $url;
 

@@ -11,16 +11,16 @@ class ResetPasswordLinkPersian extends Notification
 {
     // use Queueable;
 
-    public $token;
+    public $url;
 
 
     /**
      * Create a new notification instance.
      */
 
-    public function __construct($token)
+    public function __construct($url)
     {
-        $this->token = $token;
+        $this->url = $url;
     }
 
     /**
@@ -44,7 +44,7 @@ class ResetPasswordLinkPersian extends Notification
                 'emails.reset-password-link',
                 [
                     'name' => $notifiable->name,
-                    'url' => $notifiable->generateResetPasswordLink($this->token),
+                    'url' => $this->url,
                 ]
             );
     }

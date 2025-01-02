@@ -2,18 +2,13 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-
+use App\Notifications\ResetPasswordLinkPersian;
 use App\Notifications\VerifyEmailPersian;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
-use Illuminate\Notifications\Notification;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\URL;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -140,19 +135,9 @@ class User extends Authenticatable implements MustVerifyEmail
         ])->save();
     }
 
-    /**
-     * Get the password reset link for the user.
-     *
-     * @param string
-     * @return string
-     */
-    public function generateResetPasswordLink(string $token)
+    public function sendPasswordResetNotification($token): void
     {
-        $resetUrl = "http://localhost:3000/auth/reset-password?" . http_build_query([
-            'token' => $token,
-            'email' => $this->email
-        ]);
-
-        return $resetUrl;
+        $url = 'http://localhost:3000/auth/reset-password?token=' . $token . '&email=' . $this->email;
+        $this->notify(new ResetPasswordLinkPersian($url));
     }
 }

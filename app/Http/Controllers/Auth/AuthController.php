@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ChangePasswordRequest;
 use App\Http\Requests\ForgotPasswordRequest;
 use App\Http\Requests\RegisterUserRequest;
+use App\Http\Requests\ResetPasswordRequest;
 use App\Http\Requests\VerifyEmailRequest;
 use App\Models\User;
 use App\Notifications\ResetPasswordLinkPersian;
@@ -14,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -79,15 +81,47 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->first();
 
         // Generate reset password token
-        $token = Password::createToken($user);
+        // $token = Password::createToken($user);
         // $status = Password::sendResetLink($request->only('email'));
 
-        $user->notify(new ResetPasswordLinkPersian($token));
+        $status = Password::sendResetLink(
+            $request->only('email')
+        );
 
-        return response()->json([
+        // $user->notify(new ResetPasswordLinkPersian($token));
+
+        return $status === Password::RESET_LINK_SENT ? response()->json([
             'status' => true,
             'message' => 'لینک بازیابی رمز عبور به ایمیل شما ارسال شد'
+        ]) : response()->json([
+            'status' => false,
+            'message' => 'لینک بازیابی رمز عبور ارسال نشد'
         ]);
+    }
+
+    public function reset_password(ResetPasswordRequest $request)
+    {
+        $user = User::where('email', $request->email)->firstOrFail();
+
+        $status = Password::reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function (User $user, string $password) {
+                $user->forceFill([
+                    'password' => Hash::make($password)
+                ])->setRememberToken(Str::random(60));
+
+                $user->save();
+                $user->tokens()->delete();
+                // event(new PasswordReset($user));
+            }
+        );
+        return $status === Password::PASSWORD_RESET ? response()->json([
+            'status' => true,
+            'message' => 'رمز عبور با موفقیت تغییر کرد'
+        ], 200) : response()->json([
+            'status' => false,
+            'message' => 'عملیات تغییر رمز عبور با خطا مواجه شد. لطفاً لینک بازیابی رمز عبور را بررسی کنید یا درخواست لینک جدید نمایید'
+        ], 400);
     }
 
 

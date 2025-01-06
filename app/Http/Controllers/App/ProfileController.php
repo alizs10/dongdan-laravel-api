@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\App;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\DeleteAccountRequest;
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Http\Requests\UpdateUserSettingsRequest;
 use Illuminate\Http\Request;
@@ -56,6 +57,26 @@ class ProfileController extends Controller
             'status' => true,
             'message' => 'Settings updated successfully!',
             'settings' => $user->settings
+        ], 200);
+    }
+
+    public function delete_account(DeleteAccountRequest $request)
+    {
+
+        // check if the password is correct
+        if (!password_verify($request->password, $request->user()->password)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'رمز عبور اشتباه است!',
+            ], 401);
+        }
+
+        // delete the user
+        $request->user()->delete();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'حساب شما با موفقیت حذف شد!',
         ], 200);
     }
 }

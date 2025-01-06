@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
+use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
 {
@@ -213,5 +214,42 @@ class AuthController extends Controller
             'status' => true,
             'message' => 'حساب کاربری با موفقیت تایید شد'
         ], 200);
+    }
+
+    // google
+    public function google_redirect()
+    {
+        return response()->json([
+            'url' => Socialite::driver('google')->stateless()->redirect()->getTargetUrl()
+        ], 200);
+    }
+
+    public function google_callback(Request $request)
+    {
+        try {
+            $googleUser = Socialite::driver('google')
+                ->stateless()
+                ->with(['code' => $request->code])
+                ->user();
+
+            $user = User::firstOrCreate(
+                ['email' => $googleUser->email],
+                [
+                    'name' => $googleUser->name,
+                    'google_id' => $googleUser->id,
+                    'email_verified_at' => now(),
+                    'password' => Hash::make(Str::random(16))
+                ]
+            );
+            $user->settings()->create();
+            $token = $user->createToken('google-token')->plainTextToken;
+
+            return response()->json([
+                'token' => $token,
+                'user' => $user
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
     }
 }

@@ -88,7 +88,7 @@ class EventController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'event created successfully!',
-            'event' => $event->load(['members', 'expenses'])
+            'event' => $event->load(['members', 'expenses'])->loadCount('members')
         ]);
     }
     public function update(UpdateEventRequest $request, string $id)

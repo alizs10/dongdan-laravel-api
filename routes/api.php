@@ -23,6 +23,10 @@ Route::prefix('auth')->group(function () {
     // verify email
     Route::get('/verify-email', [AuthController::class, 'send_verification_email'])->middleware('auth:sanctum');
     Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verify_email']);
+
+    // google
+    Route::get('google', [AuthController::class, 'google_redirect']);
+    Route::get('google/callback', [AuthController::class, 'google_callback']);
 });
 
 

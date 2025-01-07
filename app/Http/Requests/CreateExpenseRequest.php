@@ -25,7 +25,6 @@ class CreateExpenseRequest extends FormRequest
         $rules = [
             'description' => ['required', 'string', 'max:255'],
             'type' => ['required', 'string', 'in:expend,transfer'],
-            'amount' => ['required', 'string', 'regex:/^[1-9][0-9]*$/'],
             'date' => ['required', 'date']
         ];
 
@@ -34,11 +33,36 @@ class CreateExpenseRequest extends FormRequest
             $rules['receiver_id'] = 'prohibited';
             $rules['transmitter_id'] = 'prohibited';
             $rules['payer_id'] = ['required', 'string', 'exists:event_members,id', new MemberBelongsToEvent($this->route('event_id'))];
-            $rules['contributors'] = 'required|array';
-            $rules['contributors.*'] = ['required', 'string', 'exists:event_members,id', new MemberBelongsToEvent($this->route('event_id'))];
+
+            if ($this->has('contributors')) {
+                $rules['amount'] = ['required', 'string', 'regex:/^[1-9][0-9]*$/'];
+                $rules['contributors'] = 'required|array';
+                $rules['contributors.*'] = ['required', 'string', 'exists:event_members,id', new MemberBelongsToEvent($this->route('event_id'))];
+            } else {
+                $rules['amount'] = 'prohibited';
+                $rules['contributors'] = 'prohibited';
+                $rules['manual_contributors'] = 'required|array';
+                $rules['manual_contributors.*'] = [
+                    'required',
+                    'array'
+                ];
+                $rules['manual_contributors.*.event_member_id'] = [
+                    'required',
+                    'string',
+                    'exists:event_members,id',
+                    new MemberBelongsToEvent($this->route('event_id'))
+                ];
+                $rules['manual_contributors.*.amount'] = [
+                    'required',
+                    'string',
+                    'regex:/^[1-9][0-9]*$/'
+                ];
+            }
         } elseif ($this->input('type') === 'transfer') {
+            $rules['amount'] = ['required', 'string', 'regex:/^[1-9][0-9]*$/'];
             $rules['payer_id'] = 'prohibited';
             $rules['contributors'] = 'prohibited';
+            $rules['manual_contributors'] = 'prohibited';
             $rules['transmitter_id'] = ['required', 'string', 'exists:event_members,id', new MemberBelongsToEvent($this->route('event_id'))];
             $rules['receiver_id'] = ['required', 'string', 'exists:event_members,id', new MemberBelongsToEvent($this->route('event_id'))];
         }

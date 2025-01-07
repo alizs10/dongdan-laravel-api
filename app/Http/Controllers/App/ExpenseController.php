@@ -22,8 +22,7 @@ class ExpenseController extends Controller
             ], 404);
         }
 
-
-        $expenses = $event->expenses()->with(['payer', 'transmitter', 'receiver', 'contributors'])->get();
+        $expenses = $event->expenses()->with(['payer', 'transmitter', 'receiver', 'contributors.eventMember'])->get();
         return response()->json([
             'expenses' => $expenses,
             'message' => 'Expenses retrieved successfully',
@@ -42,22 +41,66 @@ class ExpenseController extends Controller
             ], 404);
         }
 
-        $expense = $event->expenses()->create([
-            'type' => $request->type,
-            'description' => $request->description,
-            'date' => Carbon::parse($request->date)->setTimezone('Asia/Tehran')->format('Y-m-d H:i:s'),
-            'payer_id' => $request->payer_id,
-            'transmitter_id' => $request->transmitter_id,
-            'receiver_id' => $request->receiver_id,
-            'amount' => intval($request->amount),
-        ]);
+        if ($request->type === 'transfer') {
+            $expense = $event->expenses()->create([
+                'type' => $request->type,
+                'description' => $request->description,
+                'date' => Carbon::parse($request->date)->setTimezone('Asia/Tehran')->format('Y-m-d H:i:s'),
+                // 'payer_id' => $request->payer_id,
+                'transmitter_id' => $request->transmitter_id,
+                'receiver_id' => $request->receiver_id,
+                'amount' => intval($request->amount),
+            ]);
+        } else {
 
-        if ($request->payer_id && $request->contributors && count($request->contributors) > 0) {
-            $expense->contributors()->attach($request->contributors);
+            if ($request->has('manual_contributors')) {
+                $total_amount = 0;
+                // $manual_contributors_ids = [];
+
+                foreach ($request->manual_contributors as $contributor) {
+                    $total_amount += intval($contributor['amount']);
+                    // array_push($manual_contributors_ids, $contributor['event_member_id']);
+                }
+
+                $expense = $event->expenses()->create([
+                    'type' => $request->type,
+                    'description' => $request->description,
+                    'date' => Carbon::parse($request->date)->setTimezone('Asia/Tehran')->format('Y-m-d H:i:s'),
+                    'payer_id' => $request->payer_id,
+                    'amount' => $total_amount
+                ]);
+                foreach ($request->manual_contributors as $contributor) {
+                    $expense->contributors()->create([
+                        'event_member_id' => $contributor['event_member_id'],
+                        'amount' => $contributor['amount']
+                    ]);
+                }
+            } else {
+                $expense = $event->expenses()->create([
+                    'type' => $request->type,
+                    'description' => $request->description,
+                    'date' => Carbon::parse($request->date)->setTimezone('Asia/Tehran')->format('Y-m-d H:i:s'),
+                    'payer_id' => $request->payer_id,
+                    'amount' => intval($request->amount),
+                ]);
+
+                $amount_per_contributor = round(intval($request->amount) / count($request->contributors));
+                $reminder = intval($request->amount) % count($request->contributors);
+
+                $i = 0;
+                foreach ($request->contributors as $contributorId) {
+                    $expense->contributors()->create([
+                        'event_member_id' => $contributorId,
+                        'amount' => $amount_per_contributor + ($i === 0 ? $reminder : 0)
+                    ]);
+                    $i++;
+                }
+            }
         }
 
+
         return response()->json([
-            'expense' => $expense->load(['contributors', 'payer', 'transmitter', 'receiver']),
+            'expense' => $expense->load(['contributors.eventMember', 'payer', 'transmitter', 'receiver']),
             'message' => 'Expense created successfully',
             'status' => true
         ], 201);
@@ -83,7 +126,7 @@ class ExpenseController extends Controller
         }
 
         return response()->json([
-            'expense' => $expense->load(['payer', 'transmitter', 'receiver', 'contributors']),
+            'expense' => $expense->load(['payer', 'transmitter', 'receiver', 'contributors.eventMember']),
             'message' => 'Expense retrieved successfully',
             'status' => true
         ]);

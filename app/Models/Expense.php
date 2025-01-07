@@ -30,10 +30,9 @@ class Expense extends Model
     {
         return $this->belongsTo(EventMember::class, 'payer_id');
     }
-
     public function contributors()
     {
-        return $this->belongsToMany(EventMember::class, 'expense_contributors');
+        return $this->hasMany(ExpenseContributor::class);
     }
 
     public function transmitter()

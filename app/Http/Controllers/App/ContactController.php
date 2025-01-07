@@ -17,7 +17,7 @@ class ContactController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'contacts retrieved successfully!',
-            'contacts' => $contacts
+            'contacts' => $contacts->load('eventMemberShips', 'eventMemberShips.event')
         ]);
     }
 

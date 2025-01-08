@@ -25,7 +25,6 @@ class UpdateExpenseRequest extends FormRequest
         $rules = [
             'description' => ['required', 'string', 'max:255'],
             'type' => ['required', 'string', 'in:expend,transfer'],
-            'amount' => ['required', 'string', 'regex:/^[1-9][0-9]*$/'],
             'date' => ['required', 'date']
         ];
 
@@ -34,9 +33,26 @@ class UpdateExpenseRequest extends FormRequest
             $rules['receiver_id'] = 'prohibited';
             $rules['transmitter_id'] = 'prohibited';
             $rules['payer_id'] = ['required', 'string', 'exists:event_members,id', new MemberBelongsToEvent($this->route('event_id'))];
+
+            $rules['equal_shares'] = ['required', 'boolean'];
             $rules['contributors'] = 'required|array';
-            $rules['contributors.*'] = ['required', 'string', 'exists:event_members,id', new MemberBelongsToEvent($this->route('event_id'))];
+            $rules['contributors.*'] = [
+                'required',
+                'array'
+            ];
+            $rules['contributors.*.event_member_id'] = [
+                'required',
+                'string',
+                'exists:event_members,id',
+                new MemberBelongsToEvent($this->route('event_id'))
+            ];
+            $rules['contributors.*.amount'] = [
+                'required',
+                'string',
+                'regex:/^[1-9][0-9]*$/'
+            ];
         } elseif ($this->input('type') === 'transfer') {
+            $rules['amount'] = ['required', 'string', 'regex:/^[1-9][0-9]*$/'];
             $rules['payer_id'] = 'prohibited';
             $rules['contributors'] = 'prohibited';
             $rules['transmitter_id'] = ['required', 'string', 'exists:event_members,id', new MemberBelongsToEvent($this->route('event_id'))];

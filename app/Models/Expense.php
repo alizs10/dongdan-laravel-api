@@ -13,6 +13,7 @@ class Expense extends Model
         'event_id',
         'description',
         'amount',
+        'equal_shares',
         'type',
         'payer_id',
         'transmitter_id',

@@ -91,6 +91,8 @@ class EventController extends Controller
             'event' => $event->load(['members', 'expenses'])->loadCount('members')
         ]);
     }
+
+
     public function update(UpdateEventRequest $request, string $id)
     {
 
@@ -110,21 +112,26 @@ class EventController extends Controller
         ]);
 
         // sync contacts: we are getting event members ids, every member except these ids should be deleted.
-        $event->members()->whereNotIn('id', $request->members)->delete();
+
+        if ($request->members && count($request->members) > 0) {
+            $event->members()->whereNotIn('id', $request->members)->delete();
+        }
 
 
         // add contacts as members: we are getting contact ids, make sure they are not already members. then create new members.
-        $contacts = Contact::findMany($request->contacts);
+        if ($request->contacts && count($request->contacts) > 0) {
+            $contacts = Contact::findMany($request->contacts);
 
-        foreach ($contacts as $contact) {
-            $event->members()->firstOrCreate([
-                'member_id' => $contact->id,
-                'member_type' => Contact::class,
-            ], [
-                'name' => $contact->name,
-                'scheme' => $contact->scheme,
-                'email' => $contact->email,
-            ]);
+            foreach ($contacts as $contact) {
+                $event->members()->firstOrCreate([
+                    'member_id' => $contact->id,
+                    'member_type' => Contact::class,
+                ], [
+                    'name' => $contact->name,
+                    'scheme' => $contact->scheme,
+                    'email' => $contact->email,
+                ]);
+            }
         }
 
         // add/delete user as member

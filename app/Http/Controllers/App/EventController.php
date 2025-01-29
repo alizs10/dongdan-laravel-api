@@ -16,7 +16,7 @@ class EventController extends Controller
 {
     public function index(Request $request)
     {
-        $user_events =  $request->user()->events()->withCount('members')->get();
+        $user_events =  $request->user()->events()->withCount(['members', 'expenses'])->get();
 
         return response()->json([
             'status' => true,

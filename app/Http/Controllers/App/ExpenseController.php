@@ -22,11 +22,28 @@ class ExpenseController extends Controller
             ], 404);
         }
 
-        $expenses = $event->expenses()->with(['payer', 'transmitter', 'receiver', 'contributors.eventMember'])->get();
+        $per_page = $request->query('per_page', 10);
+        $page = $request->query('page', 1);
+
+        $expenses = $event->expenses()
+            ->with(['payer', 'transmitter', 'receiver', 'contributors.eventMember'])
+            ->orderBy('date', 'desc')
+            ->paginate($per_page, ['*'], 'page', $page);
+
         return response()->json([
-            'expenses' => $expenses,
+            'status' => true,
             'message' => 'Expenses retrieved successfully',
-            'status' => true
+            'data' => [
+                'expenses' => $expenses->items(),
+                'pagination' => [
+                    'total' => $expenses->total(),
+                    'per_page' => $expenses->perPage(),
+                    'current_page' => $expenses->currentPage(),
+                    'total_pages' => $expenses->lastPage(),
+                    'from' => $expenses->firstItem(),
+                    'to' => $expenses->lastItem()
+                ]
+            ]
         ]);
     }
 

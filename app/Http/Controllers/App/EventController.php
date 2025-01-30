@@ -11,6 +11,7 @@ use App\Models\Event;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class EventController extends Controller
 {
@@ -35,7 +36,7 @@ class EventController extends Controller
         ]);
     }
 
-    public function get_event(string $slug)
+    public function get_event(Request $request, string $slug)
     {
         $event = Event::where('slug', $slug)->first();
 
@@ -46,10 +47,46 @@ class EventController extends Controller
             ]);
         }
 
+        $per_page = $request->query('per_page', 10);
+        $page = $request->query('page', 1);
+
+        $expenses = $event->expenses()
+            ->with(['contributors.eventMember', 'payer', 'transmitter', 'receiver'])
+            ->orderBy('date', 'desc')
+            ->paginate($per_page, ['*'], 'page', $page);
+
+        $event->load('members');
+
+        // Log::debug('Debug event:', ['event' => $event]);
+        // $expends_count = $event->expenses()->where('type', 'expend')->count();
+        // $transfers_count = $event->expenses()->where('type', 'transfer')->count();
+
         return response()->json([
             'status' => true,
             'message' => 'event retrieved successfully!',
-            'event' => $event->load(['members', 'expenses', 'expenses.contributors.eventMember', 'expenses.payer', 'expenses.transmitter', 'expenses.receiver'])
+            'data' => [
+                'event' => $event,
+                'event_data' => [
+                    'expends_count' => $event->expends_count,
+                    'transfers_count' => $event->transfers_count,
+                    'total_amount' => $event->total_amount,
+                    'max_expend_amount' => $event->max_expend_amount,
+                    'max_transfer_amount' => $event->max_transfer_amount,
+                    'member_with_most_expends' => $event->member_with_most_expends,
+                    'member_with_most_transfers' => $event->member_with_most_transfers,
+                ],
+                'expenses_data' => [
+                    'expenses' => $expenses->items(),
+                    'pagination' => [
+                        'total' => $expenses->total(),
+                        'per_page' => $expenses->perPage(),
+                        'current_page' => $expenses->currentPage(),
+                        'total_pages' => $expenses->lastPage(), // This is the total number of pages
+                        'from' => $expenses->firstItem(),
+                        'to' => $expenses->lastItem()
+                    ]
+                ]
+            ]
         ]);
     }
 

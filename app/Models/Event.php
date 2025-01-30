@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class Event extends Model
@@ -61,5 +62,50 @@ class Event extends Model
     public function expenses()
     {
         return $this->hasMany(Expense::class);
+    }
+
+    public function getExpendsCountAttribute()
+    {
+        return $this->expenses()->where('type', 'expend')->count();
+    }
+
+    public function getTransfersCountAttribute()
+    {
+        return $this->expenses()->where('type', 'transfer')->count();
+    }
+
+    public function getTotalAmountAttribute()
+    {
+        return $this->expenses()->sum('amount');
+    }
+
+    public function getMaxExpendAmountAttribute()
+    {
+        return $this->expenses()
+            ->where('type', 'expend')
+            ->max('amount') ?? 0;
+    }
+
+    public function getMaxTransferAmountAttribute()
+    {
+        return $this->expenses()
+            ->where('type', 'transfer')
+            ->max('amount') ?? 0;
+    }
+
+    public function getMemberWithMostExpendsAttribute()
+    {
+        return $this->members()
+            ->withSum('expensesAsPayer', 'amount')
+            ->orderByDesc('expenses_as_payer_sum_amount')
+            ->first();
+    }
+
+    public function getMemberWithMostTransfersAttribute()
+    {
+        return $this->members()
+            ->withSum('expensesAsTransmitter', 'amount')
+            ->orderByDesc('expenses_as_transmitter_sum_amount')
+            ->first();
     }
 }

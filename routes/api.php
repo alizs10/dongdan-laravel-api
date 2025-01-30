@@ -60,7 +60,7 @@ Route::controller(EventController::class)->middleware('auth:sanctum')->group(fun
     });
 
     Route::prefix('event')->group(function () {
-        Route::get('/{event:slug}', 'get_event');
+        Route::get('/{event:slug}', 'get_event')->name('get_event')->where(['page' => '[0-9]+', 'per_page' => '[0-9]+']);
         Route::put('/{id}', 'update');
         Route::put('/{id}/status', 'updateStatus');
         Route::put('/{id}/restore', 'restore');
@@ -73,7 +73,7 @@ Route::controller(EventController::class)->middleware('auth:sanctum')->group(fun
 Route::controller(ExpenseController::class)->middleware(['auth:sanctum', 'check.event.ownership'])->group(function () {
 
     Route::prefix('event/{event_id}/expenses')->group(function () {
-        Route::get('/', 'get_expenses');
+        Route::get('/', 'get_expenses')->where(['page' => '[0-9]+', 'per_page' => '[0-9]+']);
         Route::post('/', 'create_expense');
         Route::delete('/delete/items', 'delete_items');
     });

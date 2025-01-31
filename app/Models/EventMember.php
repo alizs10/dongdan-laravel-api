@@ -34,7 +34,7 @@ class EventMember extends Model
 
     public function expensesAsTransmitter()
     {
-        return $this->hasMany(Expense::class, 'transmitter_id', 'member_id');
+        return $this->hasMany(Expense::class, 'transmitter_id');
     }
 
     public function expensesAsReceiver()
@@ -47,17 +47,49 @@ class EventMember extends Model
         return $this->belongsToMany(Expense::class, 'expense_contributors', 'event_member_id', 'expense_id');
     }
 
-    public function getTotalExpendsAttribute()
+    public function getTotalExpendsAmountAttribute()
     {
         return $this->expensesAsPayer()
-            ->where('type', 'expend')
             ->sum('amount');
     }
 
-    public function getTotalTransfersAttribute()
+
+    public function getTotalContributionsAmountAttribute()
     {
-        return $this->expensesAsPayer()
-            ->where('type', 'transfer')
-            ->sum('amount');
+        return $this->expensesAsContributor()
+            ->withPivot('amount')
+            ->get()
+            ->sum('pivot.amount');
+    }
+
+    public function getTotalSentAmountAttribute()
+    {
+        return $this->expensesAsTransmitter()->sum('amount');
+    }
+
+    public function getTotalReceivedAmountAttribute()
+    {
+        return $this->expensesAsReceiver()->sum('amount');
+    }
+
+    public function getBalanceAttribute()
+    {
+        $paid = $this->total_expends_amount;
+        $contributions = $this->total_contributions_amount;
+        $sent = $this->total_sent_amount;
+        $received = $this->total_received_amount;
+
+        return ($paid + $sent) - ($contributions + $received);
+    }
+
+    public function getBalanceStatusAttribute()
+    {
+        $balance = $this->balance;
+        if ($balance > 0) {
+            return 'creditor';
+        } elseif ($balance < 0) {
+            return 'debtor';
+        }
+        return 'settled';
     }
 }

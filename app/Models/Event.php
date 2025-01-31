@@ -108,4 +108,26 @@ class Event extends Model
             ->orderByDesc('expenses_as_transmitter_sum_amount')
             ->first();
     }
+
+    public function getTreasurerAttribute()
+    {
+        $member = $this->members()
+            ->get()
+            ->sortByDesc(function ($member) {
+                return $member->total_expends_amount + $member->total_sent_amount;
+            })
+            ->first();
+
+        if (!$member) {
+            return null;
+        }
+
+        Log::debug($member->total_expends_amount);
+        Log::debug($member->total_sent_amount);
+
+        return [
+            'member' => $member,
+            'amount' => $member->total_expends_amount + $member->total_sent_amount
+        ];
+    }
 }

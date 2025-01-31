@@ -121,6 +121,17 @@ class ExpenseController extends Controller
 
         return response()->json([
             'expense' => $expense->load(['contributors.eventMember', 'payer', 'transmitter', 'receiver']),
+            'event_data' => [
+                'expends_count' => $event->expends_count,
+                'transfers_count' => $event->transfers_count,
+                'total_amount' => $event->total_amount,
+                'max_expend_amount' => $event->max_expend_amount,
+                'max_transfer_amount' => $event->max_transfer_amount,
+                // 'member_with_most_expends' => $event->member_with_most_expends,
+                // 'member_with_most_transfers' => $event->member_with_most_transfers,
+                'treasurer' => $event->treasurer,
+
+            ],
             'message' => 'Expense created successfully',
             'status' => true
         ], 201);
@@ -200,6 +211,17 @@ class ExpenseController extends Controller
 
         return response()->json([
             'expense' => $expense->load(['payer', 'transmitter', 'receiver', 'contributors.eventMember']),
+            'event_data' => [
+                'expends_count' => $event->expends_count,
+                'transfers_count' => $event->transfers_count,
+                'total_amount' => $event->total_amount,
+                'max_expend_amount' => $event->max_expend_amount,
+                'max_transfer_amount' => $event->max_transfer_amount,
+                // 'member_with_most_expends' => $event->member_with_most_expends,
+                // 'member_with_most_transfers' => $event->member_with_most_transfers,
+                'treasurer' => $event->treasurer,
+
+            ],
             'message' => 'Expense updated successfully',
             'status' => true
         ], 200);
@@ -229,7 +251,18 @@ class ExpenseController extends Controller
 
         return response()->json([
             'message' => 'Expense deleted successfully',
-            'status' => true
+            'status' => true,
+            'event_data' => [
+                'expends_count' => $event->expends_count,
+                'transfers_count' => $event->transfers_count,
+                'total_amount' => $event->total_amount,
+                'max_expend_amount' => $event->max_expend_amount,
+                'max_transfer_amount' => $event->max_transfer_amount,
+                // 'member_with_most_expends' => $event->member_with_most_expends,
+                // 'member_with_most_transfers' => $event->member_with_most_transfers,
+                'treasurer' => $event->treasurer,
+
+            ],
         ]);
     }
 
@@ -247,7 +280,18 @@ class ExpenseController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'expenses permanently deleted successfully!'
+            'message' => 'expenses permanently deleted successfully!',
+            'event_data' => [
+                'expends_count' => $event->expends_count,
+                'transfers_count' => $event->transfers_count,
+                'total_amount' => $event->total_amount,
+                'max_expend_amount' => $event->max_expend_amount,
+                'max_transfer_amount' => $event->max_transfer_amount,
+                // 'member_with_most_expends' => $event->member_with_most_expends,
+                // 'member_with_most_transfers' => $event->member_with_most_transfers,
+                'treasurer' => $event->treasurer,
+
+            ],
         ], 200);
     }
 }

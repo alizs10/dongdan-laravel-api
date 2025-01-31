@@ -47,8 +47,8 @@ class EventController extends Controller
             ]);
         }
 
-        $per_page = $request->query('per_page', 10);
-        $page = $request->query('page', 1);
+        $per_page = 10;
+        $page = 1;
 
         $expenses = $event->expenses()
             ->with(['contributors.eventMember', 'payer', 'transmitter', 'receiver'])
@@ -57,9 +57,10 @@ class EventController extends Controller
 
         $event->load('members');
 
-        // Log::debug('Debug event:', ['event' => $event]);
-        // $expends_count = $event->expenses()->where('type', 'expend')->count();
-        // $transfers_count = $event->expenses()->where('type', 'transfer')->count();
+        $event->members->each(function ($member) {
+            $member->append(['balance', 'balance_status', 'total_expends_amount', 'total_contributions_amount', 'total_sent_amount', 'total_received_amount']);
+        });
+
 
         return response()->json([
             'status' => true,
@@ -72,8 +73,9 @@ class EventController extends Controller
                     'total_amount' => $event->total_amount,
                     'max_expend_amount' => $event->max_expend_amount,
                     'max_transfer_amount' => $event->max_transfer_amount,
-                    'member_with_most_expends' => $event->member_with_most_expends,
-                    'member_with_most_transfers' => $event->member_with_most_transfers,
+                    // 'member_with_most_expends' => $event->member_with_most_expends,
+                    // 'member_with_most_transfers' => $event->member_with_most_transfers,
+                    'treasurer' => $event->treasurer,
                 ],
                 'expenses_data' => [
                     'expenses' => $expenses->items(),

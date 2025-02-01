@@ -74,6 +74,20 @@ Route::controller(ExpenseController::class)->middleware(['auth:sanctum', 'check.
 
     Route::prefix('event/{event_id}/expenses')->group(function () {
         Route::get('/', 'get_expenses')->where(['page' => '[0-9]+', 'per_page' => '[0-9]+']);
+        Route::get('/filter', 'filter_expenses')->where([
+            'cursor' => '[0-9\-]+|',
+            'cursor_id' => '[0-9]+|',
+            'limit' => '[0-9]+|',
+            'type' => '(expend|transfer|any)',
+            'min_amount' => '[0-9]+|',
+            'max_amount' => '[0-9]+|',
+            'start_date' => '[0-9\-]+|',
+            'end_date' => '[0-9\-]+|',
+            'payer_id' => '[0-9]+|',
+            'transmitter_id' => '[0-9]+|',
+            'receiver_id' => '[0-9]+|',
+            'contributor_ids' => '[0-9,]+|',
+        ]);
         Route::post('/', 'create_expense');
         Route::delete('/delete/items', 'delete_items');
     });

@@ -332,4 +332,108 @@ class ExpenseController extends Controller
             ],
         ], 200);
     }
+
+    public function filter_expenses(Request $request, $event_id)
+    {
+        $event = $request->user()->events()->find($event_id);
+        if (!$event) {
+            return response()->json([
+                'message' => 'Event not found',
+                'status' => false
+            ], 404);
+        }
+
+        $query = $event->expenses()
+            ->with(['contributors.eventMember', 'payer', 'transmitter', 'receiver']);
+
+        // فیلتر بر اساس نوع هزینه
+        if ($request->type && $request->type !== 'any') {
+            $query->where('type', $request->type);
+        }
+
+        // فیلتر بر اساس مبلغ
+        if ($request->min_amount) {
+            $query->where('amount', '>=', $request->min_amount);
+        }
+        if ($request->max_amount) {
+            $query->where('amount', '<=', $request->max_amount);
+        }
+
+        // فیلتر بر اساس تاریخ
+        if ($request->start_date) {
+            $query->where('date', '>=', $request->start_date);
+        }
+        if ($request->end_date) {
+            $query->where('date', '<=', $request->end_date);
+        }
+
+        // فیلتر بر اساس پرداخت‌کننده
+        if ($request->payer_id && $request->type !== 'transfer') {
+            $query->where('payer_id', $request->payer_id);
+        }
+
+        // فیلتر بر اساس انتقال‌دهنده
+        if ($request->transmitter_id && $request->type !== 'expend') {
+            $query->where('transmitter_id', $request->transmitter_id);
+        }
+
+        // فیلتر بر اساس دریافت‌کننده
+        if ($request->receiver_id && $request->type !== 'expend') {
+            $query->where('receiver_id', $request->receiver_id);
+        }
+
+        // فیلتر بر اساس مشارکت‌کنندگان
+        if ($request->contributor_ids && $request->type !== 'transfer') {
+            $contributor_ids = explode(',', $request->contributor_ids);
+            $query->whereHas('contributors', function ($q) use ($contributor_ids) {
+                $q->whereIn('event_member_id', $contributor_ids);
+            });
+        }
+
+        // مرتب‌سازی بر اساس تاریخ نزولی
+        $query->orderBy('date', 'desc')->orderBy('id', 'desc');
+
+        // تعداد رکوردهای درخواستی در هر صفحه
+        $limit = $request->query('limit', 10);
+        // cursor: تاریخ آخرین آیتمی که در صفحه قبل دریافت شده و آیدی آن
+        $cursor = $request->query('cursor');
+        $cursorId = $request->query('cursor_id');
+
+        // اگر cursor داشته باشیم، فقط رکوردهایی که تاریخ کوچکتر از cursor دارند را می‌گیریم
+        // یا اگر تاریخ برابر است، آیدی کوچکتر از cursor_id داشته باشند
+        if ($cursor && $cursorId) {
+            $query->where(function ($q) use ($cursor, $cursorId) {
+                $q->where('date', '<', Carbon::parse($cursor))
+                    ->orWhere(function ($q) use ($cursor, $cursorId) {
+                        $q->where('date', '=', Carbon::parse($cursor))
+                            ->where('id', '<', $cursorId);
+                    });
+            });
+        }
+
+        // یک رکورد بیشتر می‌گیریم تا بفهمیم آیا صفحه بعدی وجود دارد
+        $expenses = $query->take($limit + 1)->get();
+
+        // اگر تعداد نتایج بیشتر از limit باشد، یعنی صفحه بعدی وجود دارد
+        $hasMore = $expenses->count() > $limit;
+        // رکورد اضافی را حذف می‌کنیم
+        $expenses = $expenses->take($limit);
+
+        // cursor بعدی را از تاریخ و آیدی آخرین آیتم می‌گیریم
+        $nextCursor = $hasMore ? $expenses->last()->date : null;
+        $nextCursorId = $hasMore ? $expenses->last()->id : null;
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Expenses filtered successfully',
+            'data' => [
+                'expenses' => $expenses,
+                'pagination' => [
+                    'next_cursor' => $nextCursor,
+                    'next_cursor_id' => $nextCursorId,
+                    'has_more' => $hasMore
+                ]
+            ]
+        ]);
+    }
 }

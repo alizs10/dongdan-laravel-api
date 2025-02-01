@@ -47,20 +47,46 @@ class EventController extends Controller
             ]);
         }
 
-        $per_page = 10;
-        $page = 1;
+        // تعداد رکوردهای درخواستی در هر صفحه
+        $limit = $request->query('limit', 10);
+        // cursor: تاریخ آخرین آیتمی که در صفحه قبل دریافت شده و آیدی آن
+        $cursor = $request->query('cursor');
+        $cursorId = $request->query('cursor_id');
 
-        $expenses = $event->expenses()
+        $query = $event->expenses()
             ->with(['contributors.eventMember', 'payer', 'transmitter', 'receiver'])
             ->orderBy('date', 'desc')
-            ->paginate($per_page, ['*'], 'page', $page);
+            ->orderBy('id', 'desc');
+
+        // اگر cursor داشته باشیم، فقط رکوردهایی که تاریخ کوچکتر از cursor دارند را می‌گیریم
+        // یا اگر تاریخ برابر است، آیدی کوچکتر از cursor_id داشته باشند
+        if ($cursor && $cursorId) {
+            $query->where(function ($q) use ($cursor, $cursorId) {
+                $q->where('date', '<', Carbon::parse($cursor))
+                    ->orWhere(function ($q) use ($cursor, $cursorId) {
+                        $q->where('date', '=', Carbon::parse($cursor))
+                            ->where('id', '<', $cursorId);
+                    });
+            });
+        }
+
+        // یک رکورد بیشتر می‌گیریم تا بفهمیم آیا صفحه بعدی وجود دارد
+        $expenses = $query->take($limit + 1)->get();
+
+        // اگر تعداد نتایج بیشتر از limit باشد، یعنی صفحه بعدی وجود دارد
+        $hasMore = $expenses->count() > $limit;
+        // رکورد اضافی را حذف می‌کنیم
+        $expenses = $expenses->take($limit);
+
+        // cursor بعدی را از تاریخ و آیدی آخرین آیتم می‌گیریم
+        $nextCursor = $hasMore ? $expenses->last()->date : null;
+        $nextCursorId = $hasMore ? $expenses->last()->id : null;
 
         $event->load('members');
 
         $event->members->each(function ($member) {
             $member->append(['balance', 'balance_status', 'total_expends_amount', 'total_contributions_amount', 'total_sent_amount', 'total_received_amount']);
         });
-
 
         return response()->json([
             'status' => true,
@@ -73,19 +99,14 @@ class EventController extends Controller
                     'total_amount' => $event->total_amount,
                     'max_expend_amount' => $event->max_expend_amount,
                     'max_transfer_amount' => $event->max_transfer_amount,
-                    // 'member_with_most_expends' => $event->member_with_most_expends,
-                    // 'member_with_most_transfers' => $event->member_with_most_transfers,
                     'treasurer' => $event->treasurer,
                 ],
                 'expenses_data' => [
-                    'expenses' => $expenses->items(),
+                    'expenses' => $expenses,
                     'pagination' => [
-                        'total' => $expenses->total(),
-                        'per_page' => $expenses->perPage(),
-                        'current_page' => $expenses->currentPage(),
-                        'total_pages' => $expenses->lastPage(), // This is the total number of pages
-                        'from' => $expenses->firstItem(),
-                        'to' => $expenses->lastItem()
+                        'next_cursor' => $nextCursor,
+                        'next_cursor_id' => $nextCursorId,
+                        'has_more' => $hasMore
                     ]
                 ]
             ]

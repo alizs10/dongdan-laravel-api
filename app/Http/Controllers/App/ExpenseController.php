@@ -8,6 +8,7 @@ use App\Http\Requests\MultiExpensesRequest;
 use App\Http\Requests\UpdateExpenseRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class ExpenseController extends Controller
 {
@@ -22,26 +23,63 @@ class ExpenseController extends Controller
             ], 404);
         }
 
-        $per_page = $request->query('per_page', 10);
-        $page = $request->query('page', 1);
+        // تعداد رکوردهای درخواستی در هر صفحه
+        $limit = $request->query('limit', 10);
+        // cursor: تاریخ آخرین آیتمی که در صفحه قبل دریافت شده و آیدی آن
+        $cursor = $request->query('cursor');
+        $cursorId = $request->query('cursor_id');
+        // آیدی‌های رکوردهایی که باید حذف شوند
+        $excludeIds = $request->query('exclude_ids', []);
 
-        $expenses = $event->expenses()
+        if (is_string($excludeIds)) {
+            $excludeIds = explode(',', $excludeIds);
+        }
+
+        Log::info($excludeIds);
+
+        $query = $event->expenses()
             ->with(['payer', 'transmitter', 'receiver', 'contributors.eventMember'])
             ->orderBy('date', 'desc')
-            ->paginate($per_page, ['*'], 'page', $page);
+            ->orderBy('id', 'desc');
+
+        // حذف رکوردهای مورد نظر
+        if (!empty($excludeIds)) {
+            $query->whereNotIn('id', $excludeIds);
+        }
+
+        // اگر cursor داشته باشیم، فقط رکوردهایی که تاریخ کوچکتر از cursor دارند را می‌گیریم
+        // یا اگر تاریخ برابر است، آیدی کوچکتر از cursor_id داشته باشند
+        if ($cursor && $cursorId) {
+            $query->where(function ($q) use ($cursor, $cursorId) {
+                $q->where('date', '<', Carbon::parse($cursor))
+                    ->orWhere(function ($q) use ($cursor, $cursorId) {
+                        $q->where('date', '=', Carbon::parse($cursor))
+                            ->where('id', '<', $cursorId);
+                    });
+            });
+        }
+
+        // یک رکورد بیشتر می‌گیریم تا بفهمیم آیا صفحه بعدی وجود دارد
+        $expenses = $query->take($limit + 1)->get();
+
+        // اگر تعداد نتایج بیشتر از limit باشد، یعنی صفحه بعدی وجود دارد
+        $hasMore = $expenses->count() > $limit;
+        // رکورد اضافی را حذف می‌کنیم
+        $expenses = $expenses->take($limit);
+
+        // cursor بعدی را از تاریخ و آیدی آخرین آیتم می‌گیریم
+        $nextCursor = $hasMore ? $expenses->last()->date : null;
+        $nextCursorId = $hasMore ? $expenses->last()->id : null;
 
         return response()->json([
             'status' => true,
             'message' => 'Expenses retrieved successfully',
             'data' => [
-                'expenses' => $expenses->items(),
+                'expenses' => $expenses,
                 'pagination' => [
-                    'total' => $expenses->total(),
-                    'per_page' => $expenses->perPage(),
-                    'current_page' => $expenses->currentPage(),
-                    'total_pages' => $expenses->lastPage(),
-                    'from' => $expenses->firstItem(),
-                    'to' => $expenses->lastItem()
+                    'next_cursor' => $nextCursor,
+                    'next_cursor_id' => $nextCursorId,
+                    'has_more' => $hasMore
                 ]
             ]
         ]);

@@ -79,4 +79,48 @@ class ProfileController extends Controller
             'message' => 'حساب شما با موفقیت حذف شد!',
         ], 200);
     }
+    public function upload_avatar(Request $request)
+    {
+        $request->validate([
+            'avatar' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+        ]);
+
+        $user = $request->user();
+        $avatarName = $user->id . '_avatar' . time() . '.' . $request->avatar->extension();
+        $avatarDirectory = public_path('avatars');
+        if (!file_exists($avatarDirectory)) {
+            mkdir($avatarDirectory, 0755, true);
+        }
+        $request->avatar->move($avatarDirectory, $avatarName);
+
+        // Full path to the avatar URL
+        $avatarUrl = asset('avatars/' . $avatarName);
+
+        $user->avatar = $avatarUrl;
+        $user->save();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Avatar uploaded successfully!',
+            'avatar' => $avatarUrl,
+        ], 200);
+    }
+
+    public function delete_avatar(Request $request)
+    {
+        $user = $request->user();
+        $avatarPath = public_path('avatars/' . basename($user->avatar));
+
+        if (file_exists($avatarPath)) {
+            unlink($avatarPath);
+        }
+
+        $user->avatar = null;
+        $user->save();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Avatar deleted successfully!',
+        ], 200);
+    }
 }

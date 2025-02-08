@@ -346,47 +346,92 @@ class ExpenseController extends Controller
         $query = $event->expenses()
             ->with(['contributors.eventMember', 'payer', 'transmitter', 'receiver']);
 
-        // فیلتر بر اساس نوع هزینه
-        if ($request->type && $request->type !== 'any') {
-            $query->where('type', $request->type);
-        }
+        // Get filter type - default is 'and'
+        $filterType = $request->filter_type ?? 'and';
 
-        // فیلتر بر اساس مبلغ
-        if ($request->min_amount) {
-            $query->where('amount', '>=', $request->min_amount);
-        }
-        if ($request->max_amount) {
-            $query->where('amount', '<=', $request->max_amount);
-        }
+        if ($filterType === 'and') {
+            // فیلتر بر اساس نوع هزینه
+            if ($request->type && $request->type !== 'any') {
+                $query->where('type', $request->type);
+            }
 
-        // فیلتر بر اساس تاریخ
-        if ($request->start_date) {
-            $query->where('date', '>=', $request->start_date);
-        }
-        if ($request->end_date) {
-            $query->where('date', '<=', $request->end_date);
-        }
+            // فیلتر بر اساس مبلغ
+            if ($request->min_amount) {
+                $query->where('amount', '>=', $request->min_amount);
+            }
+            if ($request->max_amount) {
+                $query->where('amount', '<=', $request->max_amount);
+            }
 
-        // فیلتر بر اساس پرداخت‌کننده
-        if ($request->payer_id && $request->type !== 'transfer') {
-            $query->where('payer_id', $request->payer_id);
-        }
+            // فیلتر بر اساس تاریخ
+            if ($request->start_date) {
+                $query->where('date', '>=', $request->start_date);
+            }
+            if ($request->end_date) {
+                $query->where('date', '<=', $request->end_date);
+            }
 
-        // فیلتر بر اساس انتقال‌دهنده
-        if ($request->transmitter_id && $request->type !== 'expend') {
-            $query->where('transmitter_id', $request->transmitter_id);
-        }
+            // فیلتر بر اساس پرداخت‌کننده
+            if ($request->payer_id && $request->type !== 'transfer') {
+                $query->where('payer_id', $request->payer_id);
+            }
 
-        // فیلتر بر اساس دریافت‌کننده
-        if ($request->receiver_id && $request->type !== 'expend') {
-            $query->where('receiver_id', $request->receiver_id);
-        }
+            // فیلتر بر اساس انتقال‌دهنده
+            if ($request->transmitter_id && $request->type !== 'expend') {
+                $query->where('transmitter_id', $request->transmitter_id);
+            }
 
-        // فیلتر بر اساس مشارکت‌کنندگان
-        if ($request->contributor_ids && $request->type !== 'transfer') {
-            $contributor_ids = explode(',', $request->contributor_ids);
-            $query->whereHas('contributors', function ($q) use ($contributor_ids) {
-                $q->whereIn('event_member_id', $contributor_ids);
+            // فیلتر بر اساس دریافت‌کننده
+            if ($request->receiver_id && $request->type !== 'expend') {
+                $query->where('receiver_id', $request->receiver_id);
+            }
+
+            // فیلتر بر اساس مشارکت‌کنندگان
+            if ($request->contributor_ids && $request->type !== 'transfer') {
+                $contributor_ids = explode(',', $request->contributor_ids);
+                $query->whereHas('contributors', function ($q) use ($contributor_ids) {
+                    $q->whereIn('event_member_id', $contributor_ids);
+                });
+            }
+        } else {
+            // OR filtering
+            $query->where(function ($q) use ($request) {
+                if ($request->type && $request->type !== 'any') {
+                    $q->orWhere('type', $request->type);
+                }
+
+                if ($request->min_amount) {
+                    $q->orWhere('amount', '>=', $request->min_amount);
+                }
+                if ($request->max_amount) {
+                    $q->orWhere('amount', '<=', $request->max_amount);
+                }
+
+                if ($request->start_date) {
+                    $q->orWhere('date', '>=', $request->start_date);
+                }
+                if ($request->end_date) {
+                    $q->orWhere('date', '<=', $request->end_date);
+                }
+
+                if ($request->payer_id && $request->type !== 'transfer') {
+                    $q->orWhere('payer_id', $request->payer_id);
+                }
+
+                if ($request->transmitter_id && $request->type !== 'expend') {
+                    $q->orWhere('transmitter_id', $request->transmitter_id);
+                }
+
+                if ($request->receiver_id && $request->type !== 'expend') {
+                    $q->orWhere('receiver_id', $request->receiver_id);
+                }
+
+                if ($request->contributor_ids && $request->type !== 'transfer') {
+                    $contributor_ids = explode(',', $request->contributor_ids);
+                    $q->orWhereHas('contributors', function ($query) use ($contributor_ids) {
+                        $query->whereIn('event_member_id', $contributor_ids);
+                    });
+                }
             });
         }
 

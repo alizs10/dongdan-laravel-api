@@ -38,6 +38,8 @@ Route::middleware('auth:sanctum')->get('/validate-token', TokenValidationControl
 Route::prefix('profile')->middleware('auth:sanctum')->group(function () {
     Route::get('/', [ProfileController::class, 'index']);
     Route::put('/', [ProfileController::class, 'update']);
+    Route::post('/upload-avatar', [ProfileController::class, 'upload_avatar']);
+    Route::delete('/delete-avatar', [ProfileController::class, 'delete_avatar']);
     Route::post('/delete-account', [ProfileController::class, 'delete_account']);
 
     Route::prefix('settings')->group(function () {
@@ -61,6 +63,7 @@ Route::controller(EventController::class)->middleware('auth:sanctum')->group(fun
 
     Route::prefix('event')->group(function () {
         Route::get('/{event:slug}', 'get_event')->name('get_event');
+        Route::get('/{id}/predict-test', 'predict_test')->name('predict_test');
         Route::put('/{id}', 'update');
         Route::put('/{id}/status', 'updateStatus');
         Route::put('/{id}/restore', 'restore');
@@ -87,6 +90,7 @@ Route::controller(ExpenseController::class)->middleware(['auth:sanctum', 'check.
             'transmitter_id' => '[0-9]+|',
             'receiver_id' => '[0-9]+|',
             'contributor_ids' => '[0-9,]+|',
+            'filter_type' => '(or|and)',
         ]);
         Route::post('/', 'create_expense');
         Route::delete('/delete/items', 'delete_items');

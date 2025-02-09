@@ -14,7 +14,8 @@ class EventMember extends Model
         'email',
         'scheme',
         'member_id',
-        'member_type'
+        'member_type',
+        'avatar'
     ];
 
     public function event(): BelongsTo

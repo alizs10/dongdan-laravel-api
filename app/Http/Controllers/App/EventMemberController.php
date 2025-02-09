@@ -162,20 +162,40 @@ class EventMemberController extends Controller
             ], 404);
         }
 
+        $avatarUrl = $member->avatar;
+
+        if ($request->hasFile('avatar')) {
+            $avatarName = $member->id . '_avatar' . time() . '.' . $request->avatar->extension();
+            $avatarDirectory = public_path('avatars');
+            if (!file_exists($avatarDirectory)) {
+                mkdir($avatarDirectory, 0755, true);
+            }
+            $request->avatar->move($avatarDirectory, $avatarName);
+
+            // Full path to the avatar URL
+            $avatarUrl = asset('avatars/' . $avatarName);
+        }
+
+        $email = $member->email;
+        if ($request->email) {
+            $email = $request->email;
+        }
+
         if ($member->member_id && $member->member_type) {
             $member->member()->update([
                 'name' => $request->name,
-                'email' => $request->email,
+                'email' => $email,
                 'scheme' => $request->scheme,
+                'avatar' => $avatarUrl,
             ]);
         }
 
         $member->update([
             'name' => $request->name,
-            'email' => $request->email,
+            'email' => $email,
             'scheme' => $request->scheme,
+            'avatar' => $avatarUrl,
         ]);
-
 
         return response()->json([
             'member' => $member->load('member'),

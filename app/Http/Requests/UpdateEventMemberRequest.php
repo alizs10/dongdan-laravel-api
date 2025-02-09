@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Log;
 
 class UpdateEventMemberRequest extends FormRequest
 {
@@ -21,10 +22,12 @@ class UpdateEventMemberRequest extends FormRequest
      */
     public function rules(): array
     {
+
         return [
             'name' => 'required|string|max:255',
             'email' => 'nullable|string|email|max:255|unique:users',
             'scheme' => 'required|string|in:red,blue,green,yellow,purple,orange,rose,gray',
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ];
     }
 }

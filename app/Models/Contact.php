@@ -16,6 +16,7 @@ class Contact extends Model
         'email',
         'scheme',
         'user_id',
+        'avatar'
     ];
 
     public function user()

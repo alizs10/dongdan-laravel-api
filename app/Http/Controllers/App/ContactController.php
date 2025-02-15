@@ -33,10 +33,24 @@ class ContactController extends Controller
 
     public function create(CreateContactRequest $request)
     {
+        $avatarPath = null;
+        if ($request->hasFile('avatar')) {
+            $avatarName = 'avatar' . time() . '.' . $request->avatar->extension();
+            $avatarDirectory = public_path('avatars');
+            if (!file_exists($avatarDirectory)) {
+                mkdir($avatarDirectory, 0755, true);
+            }
+            $request->avatar->move($avatarDirectory, $avatarName);
+
+            // Full path to the avatar URL
+            $avatarPath = asset('avatars/' . $avatarName);
+        }
+
         $contact = $request->user()->contacts()->create([
             'name' => $request->name,
             'email' => $request->email,
-            'scheme' => $request->scheme
+            'scheme' => $request->scheme,
+            'avatar' => $avatarPath
         ]);
 
         return response()->json([
@@ -57,16 +71,34 @@ class ContactController extends Controller
             ]);
         }
 
+
+        $avatarUrl = $contact->avatar;
+
+        if ($request->hasFile('avatar')) {
+            $avatarName = 'avatar' . time() . '.' . $request->avatar->extension();
+            $avatarDirectory = public_path('avatars');
+            if (!file_exists($avatarDirectory)) {
+                mkdir($avatarDirectory, 0755, true);
+            }
+            $request->avatar->move($avatarDirectory, $avatarName);
+
+            // Full path to the avatar URL
+            $avatarUrl = asset('avatars/' . $avatarName);
+        }
+
+
         $contact->update([
             'name' => $request->name,
             'email' => $request->email,
-            'scheme' => $request->scheme
+            'scheme' => $request->scheme,
+            'avatar' => $avatarUrl
         ]);
 
         $contact->eventMemberships()->update([
             'name' => $request->name,
             'email' => $request->email,
-            'scheme' => $request->scheme
+            'scheme' => $request->scheme,
+            'avatar' => $avatarUrl
         ]);
 
         return response()->json([

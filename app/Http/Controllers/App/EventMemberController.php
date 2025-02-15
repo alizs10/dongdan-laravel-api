@@ -82,7 +82,8 @@ class EventMemberController extends Controller
                     'member_type' => Contact::class,
                     'name' => $contact->name,
                     'email' => $contact->email,
-                    'scheme' => $contact->scheme
+                    'scheme' => $contact->scheme,
+                    'avatar' => $contact->avatar,
                 ]);
             });
 
@@ -92,7 +93,8 @@ class EventMemberController extends Controller
                     'member_type' => User::class,
                     'name' => $request->user()->name,
                     'email' => $request->user()->email,
-                    'scheme' => $request->user()->scheme
+                    'scheme' => $request->user()->scheme,
+                    'avatar' => $request->user()->avatar
                 ]);
             } else {
                 $event->members()->where('member_id', $request->user()->id)->delete();
@@ -105,11 +107,35 @@ class EventMemberController extends Controller
             ], 200);
         }
 
+        $avatarUrl = null;
+
+        if ($request->hasFile('avatar')) {
+            $avatarName = 'avatar' . time() . '.' . $request->avatar->extension();
+            $avatarDirectory = public_path('avatars');
+            if (!file_exists($avatarDirectory)) {
+                mkdir($avatarDirectory, 0755, true);
+            }
+            $request->avatar->move($avatarDirectory, $avatarName);
+
+            // Full path to the avatar URL
+            $avatarUrl = asset('avatars/' . $avatarName);
+        }
+
         $new_member = $event->members()->firstOrCreate([
             'name' => $request->name,
             'email' => $request->email,
-            'scheme' => $request->scheme
+            'scheme' => $request->scheme,
+            'avatar' => $avatarUrl
         ]);
+
+        if ($request->add_to_contacts === 'true') {
+            $request->user()->contacts()->firstOrCreate([
+                'name' => $request->name,
+                'email' => $request->email,
+                'scheme' => $request->scheme,
+                'avatar' => $avatarUrl
+            ]);
+        }
 
         return response()->json([
             'member' => $new_member,
@@ -165,7 +191,7 @@ class EventMemberController extends Controller
         $avatarUrl = $member->avatar;
 
         if ($request->hasFile('avatar')) {
-            $avatarName = $member->id . '_avatar' . time() . '.' . $request->avatar->extension();
+            $avatarName = 'avatar' . time() . '.' . $request->avatar->extension();
             $avatarDirectory = public_path('avatars');
             if (!file_exists($avatarDirectory)) {
                 mkdir($avatarDirectory, 0755, true);

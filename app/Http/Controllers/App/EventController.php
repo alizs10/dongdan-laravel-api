@@ -149,7 +149,7 @@ class EventController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'event created successfully!',
-            'event' => $event->load(['members', 'expenses'])->loadCount('members')
+            'event' => $event->load(['members', 'expenses'])->loadCount('members', 'expenses')
         ]);
     }
 
@@ -212,7 +212,7 @@ class EventController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'event updated successfully!',
-            'event' => $event->load(['members', 'expenses'])->loadCount('members')
+            'event' => $event->load(['members', 'expenses'])->loadCount('members', 'expenses')
         ]);
     }
 
@@ -226,10 +226,16 @@ class EventController extends Controller
             ]);
         }
 
-        $event->update([
-            'end_date' => $event->end_date === null ? Carbon::now()->setTimezone('Asia/Tehran')->format('Y-m-d H:i:s') : null,
-        ]);
+        if ($request->has('end_date')) {
+            $endDate = Carbon::parse($request->end_date)->setTimezone('Asia/Tehran')->format('Y-m-d H:i:s');
+            $event->update(['end_date' => $endDate]);
+        } else {
+            $event->update([
+                'end_date' => $event->end_date === null ? Carbon::now()->setTimezone('Asia/Tehran')->format('Y-m-d H:i:s') : null,
+            ]);
+        }
 
+        // Refresh the event without changing the start date
         $event->refresh();
 
         return response()->json([

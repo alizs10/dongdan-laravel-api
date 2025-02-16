@@ -62,17 +62,26 @@ class ProfileController extends Controller
 
     public function delete_account(DeleteAccountRequest $request)
     {
+        $user = $request->user();
 
-        // check if the password is correct
-        if (!password_verify($request->password, $request->user()->password)) {
+        // Check if the password is correct
+        if (!password_verify($request->password, $user->password)) {
             return response()->json([
                 'status' => false,
                 'message' => 'رمز عبور اشتباه است!',
             ], 401);
         }
 
-        // delete the user
-        $request->user()->delete();
+        // Delete the avatar if it exists
+        if ($user->avatar) {
+            $avatarPath = public_path('avatars/' . basename($user->avatar));
+            if (file_exists($avatarPath)) {
+                unlink($avatarPath);
+            }
+        }
+
+        // Delete the user
+        $user->delete();
 
         return response()->json([
             'status' => true,

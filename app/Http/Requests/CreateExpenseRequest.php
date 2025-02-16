@@ -25,7 +25,6 @@ class CreateExpenseRequest extends FormRequest
         $rules = [
             'description' => ['required', 'string', 'max:255'],
             'type' => ['required', 'string', 'in:expend,transfer'],
-            'equal_shares' => ['required', 'boolean'],
             'date' => ['required', 'date']
         ];
 
@@ -34,7 +33,7 @@ class CreateExpenseRequest extends FormRequest
             $rules['receiver_id'] = 'prohibited';
             $rules['transmitter_id'] = 'prohibited';
             $rules['payer_id'] = ['required', 'string', 'exists:event_members,id', new MemberBelongsToEvent($this->route('event_id'))];
-
+            $rules['equal_shares'] = ['required', 'boolean'];
             $rules['contributors'] = 'required|array';
             $rules['contributors.*'] = [
                 'required',

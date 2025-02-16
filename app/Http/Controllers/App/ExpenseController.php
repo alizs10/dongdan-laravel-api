@@ -23,12 +23,9 @@ class ExpenseController extends Controller
             ], 404);
         }
 
-        // تعداد رکوردهای درخواستی در هر صفحه
         $limit = $request->query('limit', 10);
-        // cursor: تاریخ آخرین آیتمی که در صفحه قبل دریافت شده و آیدی آن
         $cursor = $request->query('cursor');
         $cursorId = $request->query('cursor_id');
-        // آیدی‌های رکوردهایی که باید حذف شوند
         $excludeIds = $request->query('exclude_ids', []);
 
         if (is_string($excludeIds)) {
@@ -42,13 +39,10 @@ class ExpenseController extends Controller
             ->orderBy('date', 'desc')
             ->orderBy('id', 'desc');
 
-        // حذف رکوردهای مورد نظر
         if (!empty($excludeIds)) {
             $query->whereNotIn('id', $excludeIds);
         }
 
-        // اگر cursor داشته باشیم، فقط رکوردهایی که تاریخ کوچکتر از cursor دارند را می‌گیریم
-        // یا اگر تاریخ برابر است، آیدی کوچکتر از cursor_id داشته باشند
         if ($cursor && $cursorId) {
             $query->where(function ($q) use ($cursor, $cursorId) {
                 $q->where('date', '<', Carbon::parse($cursor))
@@ -59,15 +53,10 @@ class ExpenseController extends Controller
             });
         }
 
-        // یک رکورد بیشتر می‌گیریم تا بفهمیم آیا صفحه بعدی وجود دارد
         $expenses = $query->take($limit + 1)->get();
-
-        // اگر تعداد نتایج بیشتر از limit باشد، یعنی صفحه بعدی وجود دارد
         $hasMore = $expenses->count() > $limit;
-        // رکورد اضافی را حذف می‌کنیم
         $expenses = $expenses->take($limit);
 
-        // cursor بعدی را از تاریخ و آیدی آخرین آیتم می‌گیریم
         $nextCursor = $hasMore ? $expenses->last()->date : null;
         $nextCursorId = $hasMore ? $expenses->last()->id : null;
 
@@ -80,7 +69,8 @@ class ExpenseController extends Controller
                     'next_cursor' => $nextCursor,
                     'next_cursor_id' => $nextCursorId,
                     'has_more' => $hasMore
-                ]
+                ],
+                'total_count' => $query->count()
             ]
         ]);
     }
@@ -113,7 +103,6 @@ class ExpenseController extends Controller
 
     public function create_expense(CreateExpenseRequest $request, $event_id)
     {
-
         $event = $request->user()->events()->find($event_id);
         if (!$event) {
             return response()->json([
@@ -133,7 +122,6 @@ class ExpenseController extends Controller
                 'amount' => intval($request->amount),
             ]);
         } else {
-
             $total_amount = 0;
 
             foreach ($request->contributors as $contributor) {
@@ -156,7 +144,6 @@ class ExpenseController extends Controller
             }
         }
 
-
         return response()->json([
             'expense' => $expense->load(['contributors.eventMember', 'payer', 'transmitter', 'receiver']),
             'event_data' => [
@@ -165,21 +152,15 @@ class ExpenseController extends Controller
                 'total_amount' => $event->total_amount,
                 'max_expend_amount' => $event->max_expend_amount,
                 'max_transfer_amount' => $event->max_transfer_amount,
-                // 'member_with_most_expends' => $event->member_with_most_expends,
-                // 'member_with_most_transfers' => $event->member_with_most_transfers,
                 'treasurer' => $event->treasurer,
-
             ],
             'message' => 'Expense created successfully',
             'status' => true
         ], 201);
     }
 
-
-
     public function update_expense(UpdateExpenseRequest $request, $event_id, $expense_id)
     {
-
         $event = $request->user()->events()->find($event_id);
 
         if (!$event) {
@@ -199,7 +180,6 @@ class ExpenseController extends Controller
         }
 
         if ($request->type === 'transfer') {
-
             if ($expense->type === 'expend') {
                 $expense->contributors()->delete();
             }
@@ -215,7 +195,6 @@ class ExpenseController extends Controller
                 'amount' => intval($request->amount),
             ]);
         } else {
-
             $total_amount = 0;
 
             foreach ($request->contributors as $contributor) {
@@ -233,10 +212,8 @@ class ExpenseController extends Controller
                 'amount' => $total_amount
             ]);
 
-            // Delete contributors that are not in the request
             $expense->contributors()->whereNotIn('event_member_id', collect($request->contributors)->pluck('event_member_id'))->delete();
 
-            // Update or create contributors from request
             foreach ($request->contributors as $contributor) {
                 $expense->contributors()->updateOrCreate(
                     ['event_member_id' => $contributor['event_member_id']],
@@ -255,10 +232,7 @@ class ExpenseController extends Controller
                 'total_amount' => $event->total_amount,
                 'max_expend_amount' => $event->max_expend_amount,
                 'max_transfer_amount' => $event->max_transfer_amount,
-                // 'member_with_most_expends' => $event->member_with_most_expends,
-                // 'member_with_most_transfers' => $event->member_with_most_transfers,
                 'treasurer' => $event->treasurer,
-
             ],
             'message' => 'Expense updated successfully',
             'status' => true
@@ -296,10 +270,7 @@ class ExpenseController extends Controller
                 'total_amount' => $event->total_amount,
                 'max_expend_amount' => $event->max_expend_amount,
                 'max_transfer_amount' => $event->max_transfer_amount,
-                // 'member_with_most_expends' => $event->member_with_most_expends,
-                // 'member_with_most_transfers' => $event->member_with_most_transfers,
                 'treasurer' => $event->treasurer,
-
             ],
         ]);
     }
@@ -325,10 +296,7 @@ class ExpenseController extends Controller
                 'total_amount' => $event->total_amount,
                 'max_expend_amount' => $event->max_expend_amount,
                 'max_transfer_amount' => $event->max_transfer_amount,
-                // 'member_with_most_expends' => $event->member_with_most_expends,
-                // 'member_with_most_transfers' => $event->member_with_most_transfers,
                 'treasurer' => $event->treasurer,
-
             ],
         ], 200);
     }
@@ -346,16 +314,13 @@ class ExpenseController extends Controller
         $query = $event->expenses()
             ->with(['contributors.eventMember', 'payer', 'transmitter', 'receiver']);
 
-        // Get filter type - default is 'and'
         $filterType = $request->filter_type ?? 'and';
 
         if ($filterType === 'and') {
-            // فیلتر بر اساس نوع هزینه
             if ($request->type && $request->type !== 'any') {
                 $query->where('type', $request->type);
             }
 
-            // فیلتر بر اساس مبلغ
             if ($request->min_amount) {
                 $query->where('amount', '>=', $request->min_amount);
             }
@@ -363,7 +328,6 @@ class ExpenseController extends Controller
                 $query->where('amount', '<=', $request->max_amount);
             }
 
-            // فیلتر بر اساس تاریخ
             if ($request->start_date) {
                 $query->where('date', '>=', $request->start_date);
             }
@@ -371,22 +335,18 @@ class ExpenseController extends Controller
                 $query->where('date', '<=', $request->end_date);
             }
 
-            // فیلتر بر اساس پرداخت‌کننده
             if ($request->payer_id && $request->type !== 'transfer') {
                 $query->where('payer_id', $request->payer_id);
             }
 
-            // فیلتر بر اساس انتقال‌دهنده
             if ($request->transmitter_id && $request->type !== 'expend') {
                 $query->where('transmitter_id', $request->transmitter_id);
             }
 
-            // فیلتر بر اساس دریافت‌کننده
             if ($request->receiver_id && $request->type !== 'expend') {
                 $query->where('receiver_id', $request->receiver_id);
             }
 
-            // فیلتر بر اساس مشارکت‌کنندگان
             if ($request->contributor_ids && $request->type !== 'transfer') {
                 $contributor_ids = explode(',', $request->contributor_ids);
                 $query->whereHas('contributors', function ($q) use ($contributor_ids) {
@@ -394,7 +354,6 @@ class ExpenseController extends Controller
                 });
             }
         } else {
-            // OR filtering
             $query->where(function ($q) use ($request) {
                 if ($request->type && $request->type !== 'any') {
                     $q->orWhere('type', $request->type);
@@ -435,17 +394,12 @@ class ExpenseController extends Controller
             });
         }
 
-        // مرتب‌سازی بر اساس تاریخ نزولی
         $query->orderBy('date', 'desc')->orderBy('id', 'desc');
 
-        // تعداد رکوردهای درخواستی در هر صفحه
         $limit = $request->query('limit', 10);
-        // cursor: تاریخ آخرین آیتمی که در صفحه قبل دریافت شده و آیدی آن
         $cursor = $request->query('cursor');
         $cursorId = $request->query('cursor_id');
 
-        // اگر cursor داشته باشیم، فقط رکوردهایی که تاریخ کوچکتر از cursor دارند را می‌گیریم
-        // یا اگر تاریخ برابر است، آیدی کوچکتر از cursor_id داشته باشند
         if ($cursor && $cursorId) {
             $query->where(function ($q) use ($cursor, $cursorId) {
                 $q->where('date', '<', Carbon::parse($cursor))
@@ -456,15 +410,10 @@ class ExpenseController extends Controller
             });
         }
 
-        // یک رکورد بیشتر می‌گیریم تا بفهمیم آیا صفحه بعدی وجود دارد
         $expenses = $query->take($limit + 1)->get();
-
-        // اگر تعداد نتایج بیشتر از limit باشد، یعنی صفحه بعدی وجود دارد
         $hasMore = $expenses->count() > $limit;
-        // رکورد اضافی را حذف می‌کنیم
         $expenses = $expenses->take($limit);
 
-        // cursor بعدی را از تاریخ و آیدی آخرین آیتم می‌گیریم
         $nextCursor = $hasMore ? $expenses->last()->date : null;
         $nextCursorId = $hasMore ? $expenses->last()->id : null;
 
@@ -477,7 +426,8 @@ class ExpenseController extends Controller
                     'next_cursor' => $nextCursor,
                     'next_cursor_id' => $nextCursorId,
                     'has_more' => $hasMore
-                ]
+                ],
+                'total_count' => $query->count()
             ]
         ]);
     }

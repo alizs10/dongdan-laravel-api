@@ -191,6 +191,11 @@ class EventMemberController extends Controller
         $avatarUrl = $member->avatar;
 
         if ($request->hasFile('avatar')) {
+            // Delete the old avatar if it exists
+            if ($avatarUrl && file_exists(public_path(parse_url($avatarUrl, PHP_URL_PATH)))) {
+                unlink(public_path(parse_url($avatarUrl, PHP_URL_PATH)));
+            }
+
             $avatarName = 'avatar' . time() . '.' . $request->avatar->extension();
             $avatarDirectory = public_path('avatars');
             if (!file_exists($avatarDirectory)) {
@@ -246,6 +251,11 @@ class EventMemberController extends Controller
                 'message' => 'Member not found',
                 'status' => false
             ], 404);
+        }
+
+        // Delete the avatar if it exists
+        if ($member->avatar && file_exists(public_path(parse_url($member->avatar, PHP_URL_PATH)))) {
+            unlink(public_path(parse_url($member->avatar, PHP_URL_PATH)));
         }
 
         $member->delete();

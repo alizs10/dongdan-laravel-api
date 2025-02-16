@@ -79,6 +79,7 @@ class ProfileController extends Controller
             'message' => 'حساب شما با موفقیت حذف شد!',
         ], 200);
     }
+
     public function upload_avatar(Request $request)
     {
         $request->validate([
@@ -86,6 +87,15 @@ class ProfileController extends Controller
         ]);
 
         $user = $request->user();
+
+        // Delete the old avatar if it exists
+        if ($user->avatar) {
+            $oldAvatarPath = public_path('avatars/' . basename($user->avatar));
+            if (file_exists($oldAvatarPath)) {
+                unlink($oldAvatarPath);
+            }
+        }
+
         $avatarName = $user->id . '_avatar' . time() . '.' . $request->avatar->extension();
         $avatarDirectory = public_path('avatars');
         if (!file_exists($avatarDirectory)) {

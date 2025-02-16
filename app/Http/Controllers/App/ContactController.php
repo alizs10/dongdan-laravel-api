@@ -71,10 +71,14 @@ class ContactController extends Controller
             ]);
         }
 
-
         $avatarUrl = $contact->avatar;
 
         if ($request->hasFile('avatar')) {
+            // Delete old avatar if it exists
+            if ($avatarUrl && file_exists(public_path(parse_url($avatarUrl, PHP_URL_PATH)))) {
+                unlink(public_path(parse_url($avatarUrl, PHP_URL_PATH)));
+            }
+
             $avatarName = 'avatar' . time() . '.' . $request->avatar->extension();
             $avatarDirectory = public_path('avatars');
             if (!file_exists($avatarDirectory)) {
@@ -86,15 +90,7 @@ class ContactController extends Controller
             $avatarUrl = asset('avatars/' . $avatarName);
         }
 
-
         $contact->update([
-            'name' => $request->name,
-            'email' => $request->email,
-            'scheme' => $request->scheme,
-            'avatar' => $avatarUrl
-        ]);
-
-        $contact->eventMemberships()->update([
             'name' => $request->name,
             'email' => $request->email,
             'scheme' => $request->scheme,

@@ -115,6 +115,9 @@ class ProfileController extends Controller
         // Full path to the avatar URL
         $avatarUrl = asset('avatars/' . $avatarName);
 
+        // update user avatar in the events
+        $user->eventMemberships()->update(['avatar' => $avatarUrl]);
+
         $user->avatar = $avatarUrl;
         $user->save();
 

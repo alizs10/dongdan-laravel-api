@@ -91,8 +91,7 @@ class EventMemberController extends Controller
 
                 $isUserAlreadyMember = $event->members()->where('member_id', $request->user()->id)->exists();
 
-                if ($isUserAlreadyMember) {
-
+                if (!$isUserAlreadyMember) {
                     $event->members()->firstOrCreate([
                         'member_id' => $request->user()->id,
                         'member_type' => User::class,

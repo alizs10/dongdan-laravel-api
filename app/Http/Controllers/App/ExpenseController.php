@@ -144,6 +144,12 @@ class ExpenseController extends Controller
             }
         }
 
+        $event->load('members');
+
+        $event->members->each(function ($member) {
+            $member->append(['balance', 'balance_status', 'total_expends_amount', 'total_contributions_amount', 'total_sent_amount', 'total_received_amount']);
+        });
+
         return response()->json([
             'expense' => $expense->load(['contributors.eventMember', 'payer', 'transmitter', 'receiver']),
             'event_data' => [
@@ -153,6 +159,7 @@ class ExpenseController extends Controller
                 'max_expend_amount' => $event->max_expend_amount,
                 'max_transfer_amount' => $event->max_transfer_amount,
                 'treasurer' => $event->treasurer,
+                'event' => $event
             ],
             'message' => 'Expense created successfully',
             'status' => true

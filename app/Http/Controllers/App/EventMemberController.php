@@ -88,14 +88,20 @@ class EventMemberController extends Controller
             });
 
             if ($request->self_included === 'true') {
-                $event->members()->firstOrCreate([
-                    'member_id' => $request->user()->id,
-                    'member_type' => User::class,
-                    'name' => $request->user()->name,
-                    'email' => $request->user()->email,
-                    'scheme' => $request->user()->scheme,
-                    'avatar' => $request->user()->avatar
-                ]);
+
+                $isUserAlreadyMember = $event->members()->where('member_id', $request->user()->id)->exists();
+
+                if ($isUserAlreadyMember) {
+
+                    $event->members()->firstOrCreate([
+                        'member_id' => $request->user()->id,
+                        'member_type' => User::class,
+                        'name' => $request->user()->name,
+                        'email' => $request->user()->email,
+                        'scheme' => $request->user()->scheme,
+                        'avatar' => $request->user()->avatar
+                    ]);
+                }
             } else {
                 $event->members()->where('member_id', $request->user()->id)->delete();
             }

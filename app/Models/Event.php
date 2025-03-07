@@ -76,7 +76,7 @@ class Event extends Model
 
     public function getTotalAmountAttribute()
     {
-        return $this->expenses()->sum('amount');
+        return $this->expenses()->where('type', 'expend')->sum('amount');
     }
 
     public function getMaxExpendAmountAttribute()

@@ -258,8 +258,11 @@ class EventMemberController extends Controller
             ], 404);
         }
 
-        // Delete the avatar if it exists
-        if ($member->avatar && file_exists(public_path(parse_url($member->avatar, PHP_URL_PATH)))) {
+        // Delete the avatar if it exists and member is not the logged in user
+        if (
+            $member->avatar && file_exists(public_path(parse_url($member->avatar, PHP_URL_PATH))) &&
+            !($member->member_type === User::class && $member->member_id === $request->user()->id)
+        ) {
             unlink(public_path(parse_url($member->avatar, PHP_URL_PATH)));
         }
 

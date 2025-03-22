@@ -266,9 +266,57 @@ class EventMemberController extends Controller
             unlink(public_path(parse_url($member->avatar, PHP_URL_PATH)));
         }
 
+
+        // member expenses as contributor
+        $expensesAsContributor = $member->expensesAsContributor()->get();
         $member->delete();
 
+        // update expenses: calculate every countributor
+        $expensesAsContributor->each(function ($expense) use ($member) {
+            $total_amount = $expense->amount;
+            $is_equal_shares = $expense->equal_shares;
+
+            if ($is_equal_shares) {
+                $contributors_count = $expense->contributors()->count();
+                $amount_per_contributor = $total_amount / $contributors_count;
+
+                $expense->contributors()->each(function ($contributor) use ($amount_per_contributor) {
+                    $contributor->update([
+                        'amount' => $amount_per_contributor
+                    ]);
+                });
+            } else {
+                $expense_total_amount = 0;
+                foreach ($expense->contributors as $contributor) {
+                    if ($contributor->event_member_id !== $member->id) {
+                        $expense_total_amount += $contributor->amount;
+                    }
+                }
+
+                $expense->update([
+                    'amount' => $expense_total_amount
+                ]);
+            }
+        });
+
+        $event->load('members');
+
+        $event->members->each(function ($member) {
+            $member->append(['balance', 'balance_status', 'total_expends_amount', 'total_contributions_amount', 'total_sent_amount', 'total_received_amount']);
+        });
+
+
         return response()->json([
+            'expenses' => $event->expenses,
+            'event_members' => $event->members,
+            'event_data' => [
+                'expends_count' => $event->expends_count,
+                'transfers_count' => $event->transfers_count,
+                'total_amount' => $event->total_amount,
+                'max_expend_amount' => $event->max_expend_amount,
+                'max_transfer_amount' => $event->max_transfer_amount,
+                'treasurer' => $event->treasurer,
+            ],
             'message' => 'Member deleted successfully',
             'status' => true
         ]);

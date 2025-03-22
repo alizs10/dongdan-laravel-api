@@ -12,7 +12,6 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use DateTime;
-use Illuminate\Support\Facades\Log;
 
 class EventController extends Controller
 {
@@ -119,6 +118,7 @@ class EventController extends Controller
         $event = Event::create([
             'name' => $request->name,
             'start_date' => Carbon::parse($request->start_date)->setTimezone('Asia/Tehran')->format('Y-m-d H:i:s'),
+            'end_date' => null,
             'label' => $request->label,
             'user_id' => $request->user()->id
         ]);

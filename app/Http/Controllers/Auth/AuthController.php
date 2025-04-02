@@ -14,6 +14,7 @@ use App\Notifications\ResetPasswordLinkPersian;
 use App\Notifications\VerifyEmailPersian;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
@@ -31,13 +32,13 @@ class AuthController extends Controller
 
         $user->settings()->create();
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        // $token = $user->createToken('auth_token', ['*'], now()->addDay())->plainTextToken;
 
         return response()->json([
             'status' => true,
             'message' => 'User registered successfully!',
-            'user' => $user,
-            'token' => $token
+            'user' => $user
+            // 'token' => $token
         ], 201);
     }
 
@@ -51,24 +52,69 @@ class AuthController extends Controller
         }
 
         $user = User::where('email', $request->email)->firstOrFail();
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $token = $user->createToken('auth_token', ['*'], now()->addDay())->plainTextToken;
+        $refreshToken = Str::random(60);
 
         if (!$user->email_verified_at) {
             $user->sendEmailVerificationNotification();
         }
 
+        DB::table('refresh_tokens')->insert([
+            'user_id' => $user->id,
+            'token' => $refreshToken,
+            'expires_at' => now()->addDays(30), // Longer than access token
+            'created_at' => now(),
+        ]);
+
         return response()->json([
             'status' => true,
             'message' => 'Logged in successfully!',
             'user' => $user,
-            'token' => $token
-        ], 200);
+            'token' => $token,
+            'refresh_token' => $refreshToken
+        ], 200)
+            ->cookie('token', $token, 60 * 24, '/', null, false, false, false) // 1 day
+            ->cookie('refresh_token', $refreshToken, 60 * 24 * 30, '/', null, false, false, false); // 30 days
+    }
+
+    public function refresh(Request $request)
+    {
+        $refreshToken = $request->input('refresh_token');
+        $token = DB::table('refresh_tokens')
+            ->where('token', $refreshToken)
+            ->where('expires_at', '>', now())
+            ->first();
+
+        if (!$token) {
+            return response()->json(['error' => 'Invalid or expired refresh token'], 401);
+        }
+
+        $user = User::find($token->user_id);
+        $newAccessToken = $user->createToken('auth_token', ['*'], now()->addDay())->plainTextToken;
+
+        // Optional: Rotate refresh token to extend session
+        $newRefreshToken = Str::random(60);
+        DB::table('refresh_tokens')->where('token', $refreshToken)->update([
+            'token' => $newRefreshToken,
+            'expires_at' => now()->addDays(30),
+            'updated_at' => now(),
+        ]);
+
+        return response()->json([
+            'token' => $newAccessToken,
+            'refresh_token' => $newRefreshToken,
+        ])
+            ->cookie('token', $newAccessToken, 60 * 24, '/', null, false, false, false) // Secure, HttpOnly
+            ->cookie('refresh_token', $newRefreshToken, 60 * 24 * 30, '/', null, false, false, false);
     }
 
     public function logout(Request $request)
     {
+        $refreshToken = $request->input('refresh_token');
         $request->user()->currentAccessToken()->delete();
-
+        if ($refreshToken) {
+            DB::table('refresh_tokens')->where('token', $refreshToken)->delete();
+        }
         return response()->json([
             'status' => true,
             'message' => 'Successfully logged out!'

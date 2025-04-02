@@ -140,4 +140,22 @@ class User extends Authenticatable implements MustVerifyEmail
         $url = 'http://localhost:3000/auth/reset-password?token=' . $token . '&email=' . $this->email;
         $this->notify(new ResetPasswordLinkPersian($url));
     }
+
+
+    // personal expense manager
+
+    public function transactions()
+    {
+        return $this->hasMany(PersonalTransaction::class, 'user_id');
+    }
+
+    public function savingsGoals()
+    {
+        return $this->hasMany(PersonalSavingsGoal::class, 'user_id');
+    }
+
+    public function categories()
+    {
+        return $this->hasMany(PersonalCategory::class, 'user_id');
+    }
 }

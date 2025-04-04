@@ -9,6 +9,12 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\App\ProfileController;
 use App\Http\Controllers\Auth\TokenValidationController;
 
+// perosnal controllers
+use App\Http\Controllers\App\Personal\PersonalInitController;
+use App\Http\Controllers\App\Personal\CategoryController;
+use App\Http\Controllers\App\Personal\TransactionController;
+use App\Http\Controllers\App\Personal\SavingsGoalController;
+
 // auth routes
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
@@ -142,4 +148,37 @@ Route::controller(ContactController::class)->middleware('auth:sanctum')->group(f
         Route::delete('/', 'trash');
         Route::delete('/delete', 'delete');
     });
+});
+
+
+// personal routes
+Route::prefix('personal')->middleware('auth:sanctum')->group(function () {
+    // categories (already exists)
+    Route::prefix('categories')->controller(CategoryController::class)->group(function () {
+        Route::get('', 'index');
+        Route::get('/{id}', 'show');
+        Route::post('', 'store');
+        Route::put('/{id}', 'update');
+        Route::delete('/{id}', 'destroy');
+    });
+
+    // savings goals
+    Route::prefix('savings-goals')->controller(SavingsGoalController::class)->group(function () {
+        Route::get('', 'index');
+        Route::get('/{id}', 'show');
+        Route::post('', 'store');
+        Route::put('/{id}', 'update');
+        Route::delete('/{id}', 'destroy');
+    });
+
+    // transactions
+    Route::prefix('transactions')->controller(TransactionController::class)->group(function () {
+        Route::get('', 'index');
+        Route::get('/{id}', 'show');
+        Route::post('', 'store');
+        Route::put('/{id}', 'update');
+        Route::delete('/{id}', 'destroy');
+    });
+    // New init route
+    Route::get('/init', [PersonalInitController::class, 'index']);
 });

@@ -16,7 +16,6 @@ return new class extends Migration
             $table->date('date');
             $table->string('title');
             $table->text('description')->nullable();
-            $table->foreignId('personal_category_id')->nullable()->constrained()->onDelete('set null');
             $table->boolean('is_recurring')->default(false);
             $table->enum('frequency', ['daily', 'weekly', 'monthly', 'yearly'])->nullable();
             $table->timestamps();

@@ -20,6 +20,6 @@ class PersonalCategory extends Model
 
     public function transactions()
     {
-        return $this->hasMany(PersonalTransaction::class, 'category_id');
+        return $this->belongsToMany(PersonalTransaction::class, 'personal_transaction_category', 'category_id', 'transaction_id');
     }
 }

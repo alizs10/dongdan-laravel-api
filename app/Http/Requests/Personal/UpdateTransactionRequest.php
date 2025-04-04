@@ -19,7 +19,8 @@ class UpdateTransactionRequest extends FormRequest
             'date' => 'required|date',
             'title' => 'required|string|max:255',
             'description' => 'nullable|string|max:1000',
-            'category_id' => 'nullable|exists:personal_categories,id',
+            'category_ids' => 'nullable|array',
+            'category_ids.*' => 'exists:personal_categories,id',
             'is_recurring' => 'required|string|in:true,false',
             'frequency' => 'required_if:is_recurring,true|in:daily,weekly,monthly,yearly',
         ];
@@ -40,7 +41,7 @@ class UpdateTransactionRequest extends FormRequest
             'title.max' => 'عنوان نمی‌تواند بیشتر از ۲۵۵ کاراکتر باشد',
             'description.string' => 'توضیحات باید متن باشد',
             'description.max' => 'توضیحات نمی‌تواند بیشتر از ۱۰۰۰ کاراکتر باشد',
-            'category_id.exists' => 'دسته‌بندی انتخاب‌شده وجود ندارد',
+            'category_ids.exists' => 'دسته‌بندی انتخاب‌شده وجود ندارد',
             'is_recurring.required' => 'وضعیت تکرار الزامی است',
             'is_recurring.in' => 'وضعیت تکرار باید true یا false باشد',
             'frequency.required_if' => 'فرکانس برای تراکنش تکراری الزامی است',

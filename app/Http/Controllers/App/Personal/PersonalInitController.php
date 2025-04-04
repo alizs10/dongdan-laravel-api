@@ -34,12 +34,11 @@ class PersonalInitController extends Controller
 
         // Fetch and expand transactions
         $transactions = PersonalTransaction::where('user_id', $userId)
-            ->with('category')
+            ->with('categories')
             ->get();
-        $expandedTransactions = $this->expandRecurringTransactions($transactions);
 
         // Calculate budget (incomes - expenses)
-        $budget = $this->calculateBudget($expandedTransactions);
+        $budget = $this->calculateBudget($transactions);
 
         // Calculate savings progress
         $savingsProgress = $this->calculateSavingsProgress($savingsGoals, $budget);
@@ -61,87 +60,32 @@ class PersonalInitController extends Controller
                         'updated_at' => $goal->updated_at,
                     ];
                 }),
-                'transactions' => $expandedTransactions,
+                'transactions' => $transactions,
                 'budget' => $budget,
             ],
         ], 200);
     }
 
     /**
-     * Expand recurring transactions up to the current date.
-     *
-     * @param $transactions
-     * @return array
-     */
-    private function expandRecurringTransactions($transactions): array
-    {
-        $expanded = [];
-        $now = Carbon::now('Asia/Tehran');
-
-        foreach ($transactions as $transaction) {
-            if (!$transaction->is_recurring || !$transaction->frequency) {
-                $expanded[] = $transaction;
-                continue;
-            }
-
-            $startDate = Carbon::parse($transaction->date, 'Asia/Tehran');
-            $currentDate = $startDate->copy();
-
-            while ($currentDate <= $now) {
-                $expanded[] = (object) [
-                    'id' => $transaction->id,
-                    'type' => $transaction->type,
-                    'amount' => $transaction->amount,
-                    'date' => $currentDate->format('Y-m-d'),
-                    'title' => $transaction->title,
-                    'description' => $transaction->description,
-                    'category_id' => $transaction->category_id,
-                    'category' => $transaction->category,
-                    'is_recurring' => $transaction->is_recurring,
-                    'frequency' => $transaction->frequency,
-                    'user_id' => $transaction->user_id,
-                    'created_at' => $transaction->created_at,
-                    'updated_at' => $transaction->updated_at,
-                ];
-
-                switch ($transaction->frequency) {
-                    case 'daily':
-                        $currentDate->addDay();
-                        break;
-                    case 'weekly':
-                        $currentDate->addWeek();
-                        break;
-                    case 'monthly':
-                        $currentDate->addMonth();
-                        break;
-                    case 'yearly':
-                        $currentDate->addYear();
-                        break;
-                }
-            }
-        }
-
-        return $expanded;
-    }
-
-    /**
      * Calculate budget as incomes minus expenses.
      *
-     * @param array $transactions
+     * @param array|object $transactions
      * @return float
      */
-    private function calculateBudget(array $transactions): float
+    private function calculateBudget($transactions): float
     {
+        $transactionsArray = $transactions->toArray();
+
         $incomes = array_sum(
             array_map(
-                fn($t) => $t->type === 'income' ? $t->amount : 0,
-                $transactions
+                fn($t) => $t['type'] === 'income' ? $t['amount'] : 0,
+                $transactionsArray
             )
         );
         $expenses = array_sum(
             array_map(
-                fn($t) => $t->type === 'expense' ? $t->amount : 0,
-                $transactions
+                fn($t) => $t['type'] === 'expense' ? $t['amount'] : 0,
+                $transactionsArray
             )
         );
 

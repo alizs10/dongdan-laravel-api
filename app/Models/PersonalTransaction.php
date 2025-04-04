@@ -15,7 +15,6 @@ class PersonalTransaction extends Model
         'date',
         'title',
         'description',
-        'category_id',
         'is_recurring',
         'frequency',
     ];
@@ -31,8 +30,8 @@ class PersonalTransaction extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function category()
+    public function categories()
     {
-        return $this->belongsTo(PersonalCategory::class, 'category_id');
+        return $this->belongsToMany(PersonalCategory::class, 'personal_transaction_category', 'transaction_id', 'category_id');
     }
 }

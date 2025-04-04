@@ -18,15 +18,13 @@ class TransactionController extends Controller
     public function index(Request $request): JsonResponse
     {
         $transactions = PersonalTransaction::where('user_id', $request->user()->id)
-            ->with('category')
+            ->with('categories')
             ->get();
-
-        $expandedTransactions = $this->expandRecurringTransactions($transactions);
 
         return response()->json([
             'status' => true,
             'message' => 'تراکنش‌ها با موفقیت دریافت شدند',
-            'data' => $expandedTransactions,
+            'data' => $transactions,
         ], 200);
     }
 
@@ -37,7 +35,7 @@ class TransactionController extends Controller
     {
         $transaction = PersonalTransaction::where('user_id', $request->user()->id)
             ->where('id', $id)
-            ->with('category')
+            ->with('categories')
             ->firstOrFail();
 
         return response()->json([
@@ -59,16 +57,20 @@ class TransactionController extends Controller
             'date' => Carbon::parse($validated['date'])->setTimezone('Asia/Tehran')->format('Y-m-d'),
             'title' => $validated['title'],
             'description' => $validated['description'] ?? null,
-            'category_id' => $validated['category_id'] ?? null,
             'is_recurring' => $validated['is_recurring'] === 'true',
             'frequency' => $validated['is_recurring'] === 'true' ? $validated['frequency'] : null,
             'user_id' => $request->user()->id,
         ]);
 
+        // Sync categories if provided
+        if (isset($validated['category_ids']) && is_array($validated['category_ids'])) {
+            $transaction->categories()->sync($validated['category_ids']);
+        }
+
         return response()->json([
             'status' => true,
             'message' => 'تراکنش با موفقیت ایجاد شد',
-            'data' => $transaction->load('category'),
+            'data' => $transaction->load('categories'),
         ], 201);
     }
 
@@ -88,15 +90,19 @@ class TransactionController extends Controller
             'date' => Carbon::parse($validated['date'])->setTimezone('Asia/Tehran')->format('Y-m-d'),
             'title' => $validated['title'],
             'description' => $validated['description'] ?? null,
-            'category_id' => $validated['category_id'] ?? null,
             'is_recurring' => $validated['is_recurring'] === 'true',
             'frequency' => $validated['is_recurring'] === 'true' ? $validated['frequency'] : null,
         ]);
 
+        // Sync categories if provided
+        if (isset($validated['category_ids']) && is_array($validated['category_ids'])) {
+            $transaction->categories()->sync($validated['category_ids']);
+        }
+
         return response()->json([
             'status' => true,
             'message' => 'تراکنش با موفقیت به‌روزرسانی شد',
-            'data' => $transaction->load('category'),
+            'data' => $transaction->load('categories'),
         ], 200);
     }
 
@@ -115,59 +121,5 @@ class TransactionController extends Controller
             'status' => true,
             'message' => 'تراکنش با موفقیت حذف شد',
         ], 200);
-    }
-
-    /**
-     * Expand recurring transactions up to current date.
-     */
-    private function expandRecurringTransactions($transactions)
-    {
-        $expanded = [];
-        $now = Carbon::now('Asia/Tehran');
-
-        foreach ($transactions as $transaction) {
-            if (!$transaction->is_recurring || !$transaction->frequency) {
-                $expanded[] = $transaction;
-                continue;
-            }
-
-            $startDate = Carbon::parse($transaction->date, 'Asia/Tehran');
-            $currentDate = $startDate->copy();
-
-            while ($currentDate <= $now) {
-                $expanded[] = (object) [
-                    'id' => $transaction->id,
-                    'type' => $transaction->type,
-                    'amount' => $transaction->amount,
-                    'date' => $currentDate->format('Y-m-d'),
-                    'title' => $transaction->title,
-                    'description' => $transaction->description,
-                    'category_id' => $transaction->category_id,
-                    'category' => $transaction->category,
-                    'is_recurring' => $transaction->is_recurring,
-                    'frequency' => $transaction->frequency,
-                    'user_id' => $transaction->user_id,
-                    'created_at' => $transaction->created_at,
-                    'updated_at' => $transaction->updated_at,
-                ];
-
-                switch ($transaction->frequency) {
-                    case 'daily':
-                        $currentDate->addDay();
-                        break;
-                    case 'weekly':
-                        $currentDate->addWeek();
-                        break;
-                    case 'monthly':
-                        $currentDate->addMonth();
-                        break;
-                    case 'yearly':
-                        $currentDate->addYear();
-                        break;
-                }
-            }
-        }
-
-        return $expanded;
     }
 }

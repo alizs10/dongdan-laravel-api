@@ -25,6 +25,7 @@ class PersonalInitController extends Controller
         // Fetch categories
         $categories = PersonalCategory::where('user_id', $userId)
             ->select('id', 'name', 'created_at', 'updated_at')
+            ->withCount('transactions')
             ->get();
 
         // Fetch savings goals
@@ -47,7 +48,15 @@ class PersonalInitController extends Controller
             'status' => true,
             'message' => 'داده‌های مالی شخصی با موفقیت دریافت شدند',
             'data' => [
-                'categories' => $categories,
+                'categories' => $categories->map(function ($category) {
+                    return [
+                        'id' => $category->id,
+                        'name' => $category->name,
+                        'transaction_count' => $category->transactions_count,
+                        'created_at' => $category->created_at,
+                        'updated_at' => $category->updated_at,
+                    ];
+                }),
                 'savings_goals' => $savingsGoals->map(function ($goal) use ($savingsProgress) {
                     return [
                         'id' => $goal->id,

@@ -21,6 +21,7 @@ class CategoryController extends Controller
     {
         $categories = PersonalCategory::where('user_id', $request->user()->id)
             ->select('id', 'name', 'created_at', 'updated_at')
+            ->withCount('transactions')
             ->get();
 
         return response()->json([
@@ -42,6 +43,7 @@ class CategoryController extends Controller
         $category = PersonalCategory::where('user_id', $request->user()->id)
             ->where('id', $id)
             ->select('id', 'name', 'created_at', 'updated_at')
+            ->withCount('transactions')
             ->firstOrFail();
 
         return response()->json([
@@ -70,6 +72,7 @@ class CategoryController extends Controller
             'data' => [
                 'id' => $category->id,
                 'name' => $category->name,
+                'transactions_count' => 0,
                 'created_at' => $category->created_at,
                 'updated_at' => $category->updated_at,
             ],
@@ -87,6 +90,7 @@ class CategoryController extends Controller
     {
         $category = PersonalCategory::where('user_id', $request->user()->id)
             ->where('id', $id)
+            ->withCount('transactions')
             ->firstOrFail();
 
         $category->update([
@@ -99,6 +103,7 @@ class CategoryController extends Controller
             'data' => [
                 'id' => $category->id,
                 'name' => $category->name,
+                'transactions_count' => $category->transactions_count,
                 'created_at' => $category->created_at,
                 'updated_at' => $category->updated_at,
             ],

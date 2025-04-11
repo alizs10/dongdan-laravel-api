@@ -14,6 +14,7 @@ use App\Http\Controllers\App\Personal\PersonalInitController;
 use App\Http\Controllers\App\Personal\CategoryController;
 use App\Http\Controllers\App\Personal\TransactionController;
 use App\Http\Controllers\App\Personal\SavingsGoalController;
+use App\Http\Controllers\App\Personal\LimitController;
 
 // auth routes
 Route::prefix('auth')->group(function () {
@@ -179,6 +180,16 @@ Route::prefix('personal')->middleware('auth:sanctum')->group(function () {
         Route::put('/{id}', 'update');
         Route::delete('/{id}', 'destroy');
     });
+
+    // limits
+    Route::prefix('limits')->controller(LimitController::class)->group(function () {
+        Route::get('', 'index');
+        Route::get('/{id}', 'show');
+        Route::post('', 'store');
+        Route::put('/{id}', 'update');
+        Route::delete('/{id}', 'destroy');
+    });
+
     // New init route
     Route::get('/init', [PersonalInitController::class, 'index']);
 });

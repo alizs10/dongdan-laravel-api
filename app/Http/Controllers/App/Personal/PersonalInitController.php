@@ -4,6 +4,7 @@ namespace App\Http\Controllers\App\Personal;
 
 use App\Http\Controllers\Controller;
 use App\Models\PersonalCategory;
+use App\Models\PersonalLimit;
 use App\Models\PersonalSavingsGoal;
 use App\Models\PersonalTransaction;
 use Illuminate\Http\JsonResponse;
@@ -31,6 +32,12 @@ class PersonalInitController extends Controller
         // Fetch savings goals
         $savingsGoals = PersonalSavingsGoal::where('user_id', $userId)
             ->select('id', 'name', 'target_amount', 'due_date', 'created_at', 'updated_at')
+            ->get();
+
+        // Fetch personal limits
+        $limits = PersonalLimit::where('user_id', $userId)
+            ->select('id', 'name', 'amount', 'period', 'category_id', 'created_at', 'updated_at')
+            ->with('category:id,name')
             ->get();
 
         // Fetch and expand transactions
@@ -67,6 +74,21 @@ class PersonalInitController extends Controller
                         'progress_percentage' => $savingsProgress[$goal->id]['progress_percentage'] ?? 0,
                         'created_at' => $goal->created_at,
                         'updated_at' => $goal->updated_at,
+                    ];
+                }),
+                'limits' => $limits->map(function ($limit) {
+                    return [
+                        'id' => $limit->id,
+                        'name' => $limit->name,
+                        'amount' => $limit->amount,
+                        'period' => $limit->period,
+                        'category_id' => $limit->category_id,
+                        'category' => $limit->category ? [
+                            'id' => $limit->category->id,
+                            'name' => $limit->category->name,
+                        ] : null,
+                        'created_at' => $limit->created_at,
+                        'updated_at' => $limit->updated_at,
                     ];
                 }),
                 'transactions' => $transactions,

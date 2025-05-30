@@ -23,6 +23,22 @@ class CreateTransactionRequest extends FormRequest
             'category_ids.*' => 'exists:personal_categories,id',
             'is_recurring' => 'required|string|in:true,false',
             'frequency' => 'required_if:is_recurring,true|in:daily,weekly,monthly,yearly',
+            'savings_goal_id' => [
+                'nullable',
+                'integer',
+                // Ensure the savings_goal_id exists and belongs to the authenticated user
+                function ($attribute, $value, $fail) {
+                    if ($value) {
+                        $userId = $this->user()->id;
+                        $exists = \App\Models\PersonalSavingsGoal::where('id', $value)
+                            ->where('user_id', $userId)
+                            ->exists();
+                        if (!$exists) {
+                            $fail('هدف پس‌انداز انتخاب‌شده وجود ندارد یا متعلق به شما نیست');
+                        }
+                    }
+                }
+            ],
         ];
     }
 
@@ -47,6 +63,8 @@ class CreateTransactionRequest extends FormRequest
             'is_recurring.in' => 'وضعیت تکرار باید true یا false باشد',
             'frequency.required_if' => 'فرکانس برای تراکنش تکراری الزامی است',
             'frequency.in' => 'فرکانس باید روزانه، هفتگی، ماهانه یا سالانه باشد',
+            'savings_goal_id.integer' => 'شناسه هدف پس‌انداز باید عددی باشد',
+            'savings_goal_id.exists' => 'هدف پس‌انداز انتخاب‌شده وجود ندارد',
         ];
     }
 }

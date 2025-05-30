@@ -60,6 +60,7 @@ class TransactionController extends Controller
             'is_recurring' => $validated['is_recurring'] === 'true',
             'frequency' => $validated['is_recurring'] === 'true' ? $validated['frequency'] : null,
             'user_id' => $request->user()->id,
+            'savings_goal_id' => $validated['savings_goal_id'] ?? null, // Optional savings goal
         ]);
 
         // Sync categories if provided

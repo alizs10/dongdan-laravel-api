@@ -17,6 +17,7 @@ class PersonalTransaction extends Model
         'description',
         'is_recurring',
         'frequency',
+        'savings_goal_id', // Added field for savings goal
     ];
 
     protected $casts = [
@@ -33,5 +34,10 @@ class PersonalTransaction extends Model
     public function categories()
     {
         return $this->belongsToMany(PersonalCategory::class, 'personal_transaction_category', 'transaction_id', 'category_id');
+    }
+
+    public function savingsGoal()
+    {
+        return $this->belongsTo(PersonalSavingsGoal::class, 'savings_goal_id');
     }
 }

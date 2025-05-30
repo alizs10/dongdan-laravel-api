@@ -31,6 +31,7 @@ class PersonalInitController extends Controller
 
         // Fetch savings goals
         $savingsGoals = PersonalSavingsGoal::where('user_id', $userId)
+            ->with('transaction')
             ->select('id', 'name', 'target_amount', 'due_date', 'created_at', 'updated_at')
             ->get();
 
@@ -42,7 +43,7 @@ class PersonalInitController extends Controller
 
         // Fetch and expand transactions
         $transactions = PersonalTransaction::where('user_id', $userId)
-            ->with('categories')
+            ->with('categories', 'savingsGoal')
             ->get();
 
         // Calculate budget (incomes - expenses)
@@ -72,6 +73,7 @@ class PersonalInitController extends Controller
                         'due_date' => $goal->due_date,
                         'current_amount' => $savingsProgress[$goal->id]['current_amount'] ?? 0,
                         'progress_percentage' => $savingsProgress[$goal->id]['progress_percentage'] ?? 0,
+                        'status' => $goal->transaction ? true : false, // Assuming status is based on transaction existence
                         'created_at' => $goal->created_at,
                         'updated_at' => $goal->updated_at,
                     ];
